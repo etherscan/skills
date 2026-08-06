@@ -1,6 +1,6 @@
 # Etherscan Skills
 
-[Agent Skills](https://skills.sh) for working with [Etherscan](https://etherscan.io) and on-chain data. These skills let AI agents trace fund flows, read contracts, and turn raw Etherscan API responses into structured, verifiable output — every address, amount, and transaction hash comes from a live API call, never invented.
+[Agent Skills](https://skills.sh) for working with [Etherscan](https://etherscan.io) and on-chain data. These skills let AI agents turn raw Etherscan API responses into structured, verifiable output — every address, amount, and transaction hash comes from a live API call, never invented.
 
 <!-- Badge row 1 - status -->
 
@@ -43,22 +43,16 @@ npx skills add etherscan/skills --skill etherscan-flow
 
 ### Without npm
 
-A skill is just a folder with a `SKILL.md` — no package manager required. Any of these work:
+A skill is just a folder with a `SKILL.md` — no package manager required.
 
 **Copy the folder** into your agent's skills directory (e.g. `~/.claude/skills/`):
 
 ```bash
-git clone https://github.com/etherscan/skills.git
-cp -r skills/skills/etherscan-flow ~/.claude/skills/
+git clone https://github.com/etherscan/skills.git etherscan-skills
+cp -r etherscan-skills/skills/etherscan-flow ~/.claude/skills/
 ```
 
-**Grab a single skill folder** with `degit` (downloads the subfolder only, no git history, no install):
-
-```bash
-npx degit etherscan/skills/skills/etherscan-flow etherscan-flow
-```
-
-**Download the ZIP** from the green *Code* button on GitHub, unzip, and copy the `skills/etherscan-flow` folder into your skills directory.
+**Or download the ZIP** from the green *Code* button on GitHub, unzip, and copy the `skills/etherscan-flow` folder into your skills directory.
 
 ## Usage
 
