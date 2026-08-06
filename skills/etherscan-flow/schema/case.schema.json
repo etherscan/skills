@@ -1,0 +1,392 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/etherscan/etherscan-flow/schema/case.schema.json",
+  "title": "Etherscan Flow Case",
+  "description": "The single JSON document produced by the etherscan-flow skill. Encodes the contract documented in references/output-spec.md. Every address, amount, and txhash must come from a live Etherscan API response — this schema checks shape, not provenance.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name", "schemaVersion", "nodes", "edges", "_meta"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^case-[0-9a-z-]+$",
+      "description": "case-{SHORT_ID}; SHORT_ID is 8 lowercase hex chars of the seed (Hard rule 7)."
+    },
+    "name": { "$ref": "#/$defs/safeStringRequired" },
+    "schemaVersion": { "type": "integer", "const": 1 },
+    "nodes": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/node" }
+    },
+    "edges": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/edge" }
+    },
+    "_meta": { "$ref": "#/$defs/meta" }
+  },
+  "$defs": {
+    "address": {
+      "type": "string",
+      "pattern": "^0x[a-fA-F0-9]{40}$",
+      "description": "42-char hex address. Never an ENS name, alias, or placeholder (Hard rule 13)."
+    },
+    "txhash": {
+      "type": "string",
+      "pattern": "^0x[a-fA-F0-9]{64}$"
+    },
+    "decimalString": {
+      "type": ["string", "null"],
+      "pattern": "^-?[0-9]+(\\.[0-9]+)?$",
+      "description": "Bare human-readable decimal, no unit suffix, no raw wei. null when unresolved."
+    },
+    "safeString": {
+      "type": "string",
+      "maxLength": 200,
+      "pattern": "^(?![\\s\\S]*(?:<!--[\\s\\S]*?-->|<![A-Za-z][^>]*>|</?[A-Za-z][^>]*>))[^\\u0000-\\u001F\\u007F-\\u009F]*$"
+    },
+    "safeStringRequired": {
+      "allOf": [
+        { "$ref": "#/$defs/safeString" },
+        { "type": "string", "minLength": 1 }
+      ]
+    },
+    "safeStringOrNull": {
+      "anyOf": [
+        { "$ref": "#/$defs/safeString" },
+        { "type": "null" }
+      ]
+    },
+    "safeValue": {
+      "anyOf": [
+        { "$ref": "#/$defs/safeString" },
+        { "type": ["number", "boolean", "null"] },
+        {
+          "type": "array",
+          "items": { "$ref": "#/$defs/safeValue" }
+        },
+        {
+          "type": "object",
+          "propertyNames": { "$ref": "#/$defs/safeString" },
+          "additionalProperties": { "$ref": "#/$defs/safeValue" }
+        }
+      ]
+    },
+    "safeObject": {
+      "type": "object",
+      "propertyNames": { "$ref": "#/$defs/safeString" },
+      "additionalProperties": { "$ref": "#/$defs/safeValue" }
+    },
+    "safeArray": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/safeValue" }
+    },
+    "findingsMarkdown": {
+      "type": "string",
+      "maxLength": 1048576,
+      "pattern": "^[^\\u0000-\\u0008\\u000B\\u000C\\u000E-\\u001F\\u007F-\\u009F]*$",
+      "description": "User-authored Markdown saved by the Etherscan Flow Case Findings editor. Newlines and Markdown syntax are allowed. maxLength caps this field at 1,048,576 Unicode characters (code points), not bytes; the encoded byte size of the whole document is a separate limit the application enforces on its own."
+    },
+    "ui": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "findings_markdown": { "$ref": "#/$defs/findingsMarkdown" },
+        "findings": {
+          "allOf": [{ "$ref": "#/$defs/safeValue" }],
+          "description": "Legacy structured findings retained only until the Case Findings editor converts and saves them as findings_markdown. Recursively sanitized like any other tracer string; only findings_markdown is exempt from the 200-char/HTML limits."
+        }
+      }
+    },
+    "nodeRole": {
+      "type": "string",
+      "enum": [
+        "wallet",
+        "erc20_token",
+        "nft_contract",
+        "defi_pool",
+        "multisig",
+        "staking_contract",
+        "lending_protocol",
+        "dao_contract",
+        "attacker_eoa",
+        "scam_contract",
+        "victim_wallet",
+        "intermediate_wallet",
+        "cex_deposit",
+        "dex_router",
+        "mixer_contract",
+        "bridge",
+        "nft_drainer_contract",
+        "sweeper_bot",
+        "unknown_eoa",
+        "unknown_contract"
+      ]
+    },
+    "edgeType": {
+      "type": "string",
+      "enum": [
+        "transfer",
+        "token_transfer",
+        "dex_swap",
+        "bridge",
+        "nft",
+        "approve",
+        "contract_call",
+        "mint",
+        "burn",
+        "stake",
+        "unstake",
+        "borrow",
+        "repay",
+        "liquidity_add",
+        "liquidity_remove"
+      ]
+    },
+    "node": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "address", "chainid", "role", "hop", "x", "y"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[A-Za-z0-9_]{2,12}$" },
+        "address": { "$ref": "#/$defs/address" },
+        "chainid": { "type": "integer", "minimum": 1 },
+        "label": { "$ref": "#/$defs/safeStringOrNull" },
+        "subLabel": {
+          "allOf": [{ "$ref": "#/$defs/safeStringOrNull" }],
+          "description": "ENS name or second-line alias; never replaces address."
+        },
+        "role": { "$ref": "#/$defs/nodeRole" },
+        "hop": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "0-indexed from the seed. Seed/scope addresses are hop 0."
+        },
+        "balance": {
+          "$ref": "#/$defs/decimalString",
+          "description": "Native-coin balance, or null when not fetched. Never a fabricated 0."
+        },
+        "notes": { "$ref": "#/$defs/safeStringOrNull" },
+        "x": {
+          "type": "number",
+          "description": "Canvas x-coordinate. Tracer output starts at 0; Etherscan Flow may persist a user-edited layout."
+        },
+        "y": {
+          "type": "number",
+          "description": "Canvas y-coordinate. Tracer output starts at 0; Etherscan Flow may persist a user-edited layout."
+        }
+      }
+    },
+    "edge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "source", "target", "type", "txhash", "chainid"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[A-Za-z0-9_]{2,12}$" },
+        "source": { "type": "string", "pattern": "^[A-Za-z0-9_]{2,12}$", "description": "A node id." },
+        "target": { "type": "string", "pattern": "^[A-Za-z0-9_]{2,12}$", "description": "A node id." },
+        "amount": { "$ref": "#/$defs/decimalString" },
+        "token": { "$ref": "#/$defs/safeStringOrNull" },
+        "token_address": {
+          "anyOf": [{ "$ref": "#/$defs/address" }, { "type": "null" }],
+          "description": "ERC-20 contract address of the token moved — the unambiguous token identity (symbols can be spoofed by look-alike contracts). null/absent for native-coin edges or when only a symbol is known."
+        },
+        "txcount": { "type": "integer", "minimum": 1 },
+        "type": { "$ref": "#/$defs/edgeType" },
+        "txhash": { "$ref": "#/$defs/txhash" },
+        "txhashes": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/txhash" },
+          "maxItems": 100,
+          "description": "Every merged hash, ascending block order, txhashes[0] === txhash."
+        },
+        "chainid": { "type": "integer", "minimum": 1 },
+        "timestamp": {
+          "allOf": [{ "$ref": "#/$defs/safeStringOrNull" }],
+          "description": "ISO 8601, or null when unresolved."
+        }
+      }
+    },
+    "analysisAsset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["token", "token_address", "gross_amount", "returned_or_recovered", "net_amount"],
+      "properties": {
+        "token": { "$ref": "#/$defs/safeStringRequired" },
+        "token_address": {
+          "anyOf": [
+            { "$ref": "#/$defs/address" },
+            { "type": "null" }
+          ]
+        },
+        "gross_amount": { "$ref": "#/$defs/decimalString" },
+        "returned_or_recovered": { "$ref": "#/$defs/decimalString" },
+        "net_amount": { "$ref": "#/$defs/decimalString" }
+      }
+    },
+    "analysisEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["claim", "kind", "sources", "txhashes", "addresses", "block", "selector"],
+      "properties": {
+        "claim": { "$ref": "#/$defs/safeStringRequired" },
+        "kind": { "type": "string", "enum": ["observed", "inferred", "unverified"] },
+        "sources": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/safeStringRequired" },
+          "minItems": 1
+        },
+        "txhashes": { "type": "array", "items": { "$ref": "#/$defs/txhash" } },
+        "addresses": { "type": "array", "items": { "$ref": "#/$defs/address" } },
+        "block": { "type": ["integer", "null"], "minimum": 0 },
+        "selector": { "type": ["string", "null"], "pattern": "^0x[a-fA-F0-9]{8}$" }
+      }
+    },
+    "analysisAlternative": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["hypothesis", "assessment", "evidence_for", "evidence_against"],
+      "properties": {
+        "hypothesis": { "$ref": "#/$defs/safeStringRequired" },
+        "assessment": { "type": "string", "enum": ["plausible", "unlikely", "unresolved"] },
+        "evidence_for": { "type": "array", "items": { "$ref": "#/$defs/safeString" } },
+        "evidence_against": { "type": "array", "items": { "$ref": "#/$defs/safeString" } }
+      }
+    },
+    "analysis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status", "incident_type", "summary", "attack_vector", "root_cause", "confidence",
+        "decisive_txhashes", "evidence", "losses_by_token", "attacker_profit_by_token",
+        "alternative_hypotheses", "limitations"
+      ],
+      "properties": {
+        "status": { "type": "string", "enum": ["confirmed", "probable", "possible", "insufficient_evidence"] },
+        "incident_type": {
+          "type": "string",
+          "enum": [
+            "approval_drain", "permit_or_signature_abuse", "private_key_compromise",
+            "social_engineering_transfer", "access_control_exploit", "proxy_or_upgrade_exploit",
+            "reentrancy", "oracle_manipulation", "price_or_reserve_manipulation",
+            "flash_loan_assisted_exploit", "accounting_or_rounding_exploit", "rug_pull",
+            "malicious_token", "nft_drain", "laundering_only", "unknown"
+          ]
+        },
+        "summary": { "$ref": "#/$defs/safeStringRequired" },
+        "attack_vector": { "$ref": "#/$defs/safeStringOrNull" },
+        "root_cause": { "$ref": "#/$defs/safeStringOrNull" },
+        "confidence": { "type": "string", "enum": ["high", "medium", "low", "unknown"] },
+        "decisive_txhashes": { "type": "array", "items": { "$ref": "#/$defs/txhash" } },
+        "evidence": { "type": "array", "items": { "$ref": "#/$defs/analysisEvidence" } },
+        "losses_by_token": { "type": "array", "items": { "$ref": "#/$defs/analysisAsset" } },
+        "attacker_profit_by_token": { "type": "array", "items": { "$ref": "#/$defs/analysisAsset" } },
+        "alternative_hypotheses": { "type": "array", "items": { "$ref": "#/$defs/analysisAlternative" } },
+        "limitations": { "type": "array", "items": { "$ref": "#/$defs/safeString" } }
+      }
+    },
+    "gapEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "detail"],
+      "properties": {
+        "type": { "$ref": "#/$defs/safeStringRequired" },
+        "detail": { "$ref": "#/$defs/safeStringRequired" },
+        "claim": { "$ref": "#/$defs/safeStringRequired" },
+        "endpoint": { "$ref": "#/$defs/safeStringRequired" },
+        "error": { "$ref": "#/$defs/safeStringRequired" }
+      },
+      "if": {
+        "properties": {
+          "type": { "pattern": "(_unavailable|_incomplete|_empty)$" }
+        },
+        "required": ["type"]
+      },
+      "then": { "required": ["type", "detail", "endpoint"] }
+    },
+    "pattern": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pattern", "evidence_txhash"],
+      "properties": {
+        "pattern": { "$ref": "#/$defs/safeStringRequired" },
+        "evidence_txhash": {
+          "anyOf": [
+            { "$ref": "#/$defs/txhash" },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["created_at", "mode", "chain", "chainid", "analysis", "gaps", "disclaimer"],
+      "properties": {
+        "created_at": { "$ref": "#/$defs/safeString" },
+        "mode": {
+          "type": "string",
+          "enum": ["strict_trace", "business_entity_profile"]
+        },
+        "chain": { "$ref": "#/$defs/safeString" },
+        "chainid": { "type": "integer", "minimum": 1 },
+        "chains": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["chain", "chainid"],
+            "properties": {
+              "chain": { "$ref": "#/$defs/safeString" },
+              "chainid": { "type": "integer", "minimum": 1 }
+            }
+          }
+        },
+        "seed_txhashes": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/txhash" }
+        },
+        "seed_addresses": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/address" }
+        },
+        "hops_traced": { "type": "integer", "minimum": 0 },
+        "trace_window": {
+          "anyOf": [
+            { "$ref": "#/$defs/safeObject" },
+            { "type": "null" }
+          ]
+        },
+        "financials": {
+          "anyOf": [
+            { "$ref": "#/$defs/safeObject" },
+            { "type": "null" }
+          ]
+        },
+        "analysis": {
+          "anyOf": [
+            { "$ref": "#/$defs/analysis" },
+            { "type": "null" }
+          ]
+        },
+        "business_profile": {
+          "anyOf": [
+            { "$ref": "#/$defs/safeObject" },
+            { "type": "null" }
+          ]
+        },
+        "performance": {
+          "anyOf": [
+            { "$ref": "#/$defs/safeObject" },
+            { "type": "null" }
+          ]
+        },
+        "ui": { "$ref": "#/$defs/ui" },
+        "timeline": { "$ref": "#/$defs/safeArray" },
+        "patterns": { "type": "array", "items": { "$ref": "#/$defs/pattern" } },
+        "candidates": { "$ref": "#/$defs/safeArray" },
+        "gaps": { "type": "array", "items": { "$ref": "#/$defs/gapEntry" } },
+        "disclaimer": { "$ref": "#/$defs/safeString" }
+      }
+    }
+  }
+}

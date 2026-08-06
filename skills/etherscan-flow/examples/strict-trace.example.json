@@ -1,0 +1,200 @@
+{
+  "id": "case-example0",
+  "name": "0x1111… — SYNTHETIC approval-drain fixture (not a real trace)",
+  "schemaVersion": 1,
+  "nodes": [
+    {
+      "id": "v01",
+      "address": "0x1111111111111111111111111111111111111111",
+      "chainid": 1,
+      "label": "Victim",
+      "subLabel": null,
+      "role": "victim_wallet",
+      "hop": 0,
+      "balance": "0.42",
+      "notes": "SYNTHETIC. Seed address; approved a scam contract then lost USDT.",
+      "x": 0,
+      "y": 0
+    },
+    {
+      "id": "atk01",
+      "address": "0x2222222222222222222222222222222222222222",
+      "chainid": 1,
+      "label": "Attacker EOA",
+      "subLabel": null,
+      "role": "attacker_eoa",
+      "hop": 1,
+      "balance": null,
+      "notes": "SYNTHETIC. Called transferFrom to pull the victim's USDT, then forwarded to a CEX deposit.",
+      "x": 0,
+      "y": 0
+    },
+    {
+      "id": "cex01",
+      "address": "0x3333333333333333333333333333333333333333",
+      "chainid": 1,
+      "label": "Exchange Deposit",
+      "subLabel": null,
+      "role": "cex_deposit",
+      "hop": 2,
+      "balance": null,
+      "notes": "SYNTHETIC. Branch stops here — funds reached an exchange.",
+      "x": 0,
+      "y": 0
+    }
+  ],
+  "edges": [
+    {
+      "id": "e_v_atk",
+      "source": "v01",
+      "target": "atk01",
+      "amount": "5000",
+      "token": "USDT",
+      "token_address": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+      "txcount": 1,
+      "type": "token_transfer",
+      "txhash": "0xaaaa000000000000000000000000000000000000000000000000000000000001",
+      "txhashes": ["0xaaaa000000000000000000000000000000000000000000000000000000000001"],
+      "chainid": 1,
+      "timestamp": "2026-03-15T10:23:00Z"
+    },
+    {
+      "id": "e_atk_cex",
+      "source": "atk01",
+      "target": "cex01",
+      "amount": "5000",
+      "token": "USDT",
+      "token_address": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+      "txcount": 2,
+      "type": "token_transfer",
+      "txhash": "0xbbbb000000000000000000000000000000000000000000000000000000000002",
+      "txhashes": [
+        "0xbbbb000000000000000000000000000000000000000000000000000000000002",
+        "0xcccc000000000000000000000000000000000000000000000000000000000003"
+      ],
+      "chainid": 1,
+      "timestamp": "2026-03-15T10:41:00Z"
+    }
+  ],
+  "_meta": {
+    "created_at": "2026-03-15T11:00:00Z",
+    "mode": "strict_trace",
+    "chain": "ethereum",
+    "chainid": 1,
+    "chains": [{ "chain": "ethereum", "chainid": 1 }],
+    "seed_txhashes": ["0xaaaa000000000000000000000000000000000000000000000000000000000001"],
+    "seed_addresses": ["0x1111111111111111111111111111111111111111"],
+    "hops_traced": 2,
+    "trace_window": {
+      "startblock": 0,
+      "endblock": 0,
+      "start_timestamp": "2026-03-15T10:23:00Z",
+      "end_timestamp": "2026-03-22T10:23:00Z",
+      "days": 7,
+      "source": "seed_tx"
+    },
+    "financials": {
+      "total_eth_in": "0",
+      "total_eth_out": "0",
+      "note": "SYNTHETIC fixture — figures are illustrative, not summed from API data."
+    },
+    "analysis": {
+      "status": "confirmed",
+      "incident_type": "approval_drain",
+      "summary": "Synthetic allowance-drain conclusion used only to validate the analysis schema.",
+      "attack_vector": "ERC-20 allowance abuse",
+      "root_cause": "Synthetic spender retained allowance and initiated transferFrom.",
+      "confidence": "high",
+      "decisive_txhashes": ["0xaaaa000000000000000000000000000000000000000000000000000000000001"],
+      "evidence": [
+        {
+          "claim": "Synthetic receipt contains the victim-to-attacker token movement.",
+          "kind": "observed",
+          "sources": ["proxy/eth_getTransactionReceipt"],
+          "txhashes": ["0xaaaa000000000000000000000000000000000000000000000000000000000001"],
+          "addresses": [
+            "0x1111111111111111111111111111111111111111",
+            "0x2222222222222222222222222222222222222222"
+          ],
+          "block": 1,
+          "selector": "0x23b872dd"
+        },
+        {
+          "claim": "Allowance abuse is the best synthetic explanation for this fixture.",
+          "kind": "inferred",
+          "sources": ["proxy/eth_getTransactionReceipt", "proxy/eth_call"],
+          "txhashes": ["0xaaaa000000000000000000000000000000000000000000000000000000000001"],
+          "addresses": ["0x2222222222222222222222222222222222222222"],
+          "block": 1,
+          "selector": null
+        }
+      ],
+      "losses_by_token": [
+        {
+          "token": "USDC",
+          "token_address": "0x4444444444444444444444444444444444444444",
+          "gross_amount": "5000",
+          "returned_or_recovered": "0",
+          "net_amount": "5000"
+        }
+      ],
+      "attacker_profit_by_token": [
+        {
+          "token": "USDC",
+          "token_address": "0x4444444444444444444444444444444444444444",
+          "gross_amount": "5000",
+          "returned_or_recovered": "0",
+          "net_amount": "5000"
+        }
+      ],
+      "alternative_hypotheses": [
+        {
+          "hypothesis": "The victim intentionally transferred the token.",
+          "assessment": "unlikely",
+          "evidence_for": [],
+          "evidence_against": ["Synthetic fixture models a spender-initiated transferFrom."]
+        }
+      ],
+      "limitations": ["Synthetic fixture validates shape, not investigative accuracy or API provenance."]
+    },
+    "business_profile": null,
+    "performance": {
+      "profile": "standard",
+      "new_api_calls": 0,
+      "network_attempts": 0,
+      "cache_hits": 0,
+      "fetchlog_hits": 0,
+      "retries": 0,
+      "rate_limit_responses": 0,
+      "pages_fetched": 0,
+      "pages_reused": 0,
+      "soft_call_target": 40,
+      "hard_call_limit": 100,
+      "elapsed_ms": 0,
+      "stage_elapsed_ms": {
+        "seed": 0,
+        "classification": 0,
+        "trace": 0,
+        "totals": 0,
+        "analysis": 0,
+        "validation": 0
+      },
+      "soft_budget_overrun_reason": null
+    },
+    "timeline": [],
+    "patterns": [
+      {
+        "pattern": "approval_drain",
+        "evidence_txhash": "0xaaaa000000000000000000000000000000000000000000000000000000000001"
+      }
+    ],
+    "candidates": [],
+    "gaps": [
+      {
+        "type": "synthetic_fixture",
+        "detail": "This file is a schema-validation fixture. Every address, txhash, and amount is fabricated and must never be presented as a real Etherscan trace."
+      }
+    ],
+    "disclaimer": "SYNTHETIC FIXTURE — fabricated data, not a real trace. Roles, labels and notes are AI inference over public API data, not Etherscan verdicts, accusations, or legal findings."
+  }
+}
