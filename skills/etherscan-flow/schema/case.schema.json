@@ -37,7 +37,7 @@
     "decimalString": {
       "type": ["string", "null"],
       "pattern": "^-?[0-9]+(\\.[0-9]+)?$",
-      "description": "Bare human-readable decimal, no unit suffix, no raw wei. null when unresolved."
+      "description": "Exact bare plain-decimal string derived losslessly from raw integer units. Never a JSON number, exponent, rounded/fixed-precision cast, unit suffix, or raw wei; null when unresolved."
     },
     "safeString": {
       "type": "string",
@@ -184,7 +184,10 @@
         "id": { "type": "string", "pattern": "^[A-Za-z0-9_]{2,12}$" },
         "source": { "type": "string", "pattern": "^[A-Za-z0-9_]{2,12}$", "description": "A node id." },
         "target": { "type": "string", "pattern": "^[A-Za-z0-9_]{2,12}$", "description": "A node id." },
-        "amount": { "$ref": "#/$defs/decimalString" },
+        "amount": {
+          "$ref": "#/$defs/decimalString",
+          "description": "Exact lossless display amount. A positive raw on-chain value must never be emitted as 0."
+        },
         "token": { "$ref": "#/$defs/safeStringOrNull" },
         "token_address": {
           "anyOf": [{ "$ref": "#/$defs/address" }, { "type": "null" }],

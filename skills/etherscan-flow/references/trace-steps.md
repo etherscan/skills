@@ -14,7 +14,7 @@ GET https://api.etherscan.io/v2/api?chainid={CHAINID}&module=proxy&action=eth_ge
 ```
 
 Extract:
-- `from`, `to`, `value` (divide by 1e18 for ETH), `blockNumber` (hex → decimal), `input` (first 10 chars = 4-byte selector)
+- `from`, `to`, `value` (keep the exact hex integer; format ETH later with the lossless amount procedure in `output-spec.md`), `blockNumber` (hex → decimal), `input` (first 10 chars = 4-byte selector)
 
 ### Get receipt
 ```
@@ -204,7 +204,7 @@ GET https://api.etherscan.io/v2/api?chainid={CHAINID}&module=account&action=txli
 GET https://api.etherscan.io/v2/api?chainid={CHAINID}&module=account&action=tokentx&address={HOP_ADDRESS}&startblock={WINDOW_STARTBLOCK}&endblock={WINDOW_ENDBLOCK}&page={N}&offset=100&sort=asc&apikey={APIKEY}
 ```
 
-Track each flow as: `source → destination, amount, token/ETH, txhash, block, timestamp`.
+Track each flow as: `source → destination, raw smallest-unit amount string, decimals, token/ETH, txhash, block, timestamp`. Do not convert the amount to a decimal display string until Step 5, and never store it in a floating-point or fixed-precision decimal type.
 
 For account API rows, set `edge.txhash = row.hash`. For token-transfer rows, set `edge.txhash = row.hash`. For internal-transaction rows, set `edge.txhash = row.hash`. Never emit the source field name (`hash`) in the edge; normalize it to `txhash`.
 
@@ -247,11 +247,11 @@ Load exact matching pages from the query ledger first and continue at the first 
 ### Sum and report
 
 Calculate:
-- **Total real ETH in** = sum of `value` for all "Real ETH in" rows (convert wei → ETH: divide by 1e18)
-- **Total real ETH out** = sum of `value` for all "Real ETH out" rows
-- **Net retained** = Total in − Total out. This will **not** equal the current balance, and a gap is not by itself evidence of missing hops. Gas burned by the address, ETH moved by internal transactions, and anything outside the trace window all sit in the difference. Treat a discrepancy as a prompt to check those three first; only call it `missing_hops` in `_meta.gaps` once gas and internal txs are accounted for.
+- **Total real ETH in** = sum the integer-string `value` fields for all "Real ETH in" rows, then format wei → ETH by exact digit placement at 18 decimals (never `/ 1e18` in a floating/decimal type)
+- **Total real ETH out** = sum the raw integer-string `value` fields for all "Real ETH out" rows, then format once at 18 decimals
+- **Net retained** = subtract the raw wei totals, then format the exact integer result once at 18 decimals. This will **not** equal the current balance, and a gap is not by itself evidence of missing hops. Gas burned by the address, ETH moved by internal transactions, and anything outside the trace window all sit in the difference. Treat a discrepancy as a prompt to check those three first; only call it `missing_hops` in `_meta.gaps` once gas and internal txs are accounted for.
 - **Victim payment count** = number of distinct "on-chain message" senders (proxy for number of people who tried to communicate after being scammed)
-- **Small victim payments** = sum of "Real ETH in" from addresses that also sent on-chain messages
+- **Small victim payments** = sum the matching raw wei strings, then format once at 18 decimals
 
 ### Distinguish laundering from direct victim collection
 

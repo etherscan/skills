@@ -2,6 +2,27 @@
 
 > Part of the `etherscan-flow` skill. MANDATORY read before writing any case JSON — never write the file from memory of this schema. Every Hard rule, the 100-call budget, and the validation rules in `SKILL.md` apply here unchanged.
 
+## Lossless amount arithmetic
+
+Treat amounts as digit strings, not general-purpose numbers. This applies to edge `amount`, node `balance`, merged totals, `_meta.financials`, business totals, and incident-analysis asset amounts.
+
+1. Keep an API decimal `value` as its non-negative integer string. For a proxy hex `value`, decode it with an arbitrary-precision integer only; never via a floating-point or fixed-precision decimal type.
+2. Keep the scale separately: 18 for Ethereum ETH/wei, or the API-verified token `tokenDecimal`. If the scale is unresolved, emit `null`; never guess it.
+3. Format `raw` at scale `d` by left-padding it to at least `d + 1` digits and inserting a decimal point `d` digits from the right. Strip redundant leading integer zeros and trailing fractional zeros; if all raw digits are zero, emit `"0"`.
+4. Sum or subtract amounts only as raw arbitrary-precision integers with the same token contract and scale. For merged edges, sum raw units first and format once. Never add already-formatted values with `float`, JavaScript `Number`, `parseFloat`, `Decimal`/`BigDecimal`, database `DECIMAL`/`NUMERIC`, or equivalent casts.
+5. Emit the result as a quoted plain-decimal JSON string. Exponents (`9.2695e-14`), numeric JSON values, rounding, truncation, and fixed display precision are forbidden. If `raw > 0`, the formatted result must compare textually unequal to `"0"`.
+
+Examples:
+
+| Raw integer string | Decimals | Exact JSON string |
+|---|---:|---|
+| `92695` | 18 | `"0.000000000000092695"` |
+| `1` | 18 | `"0.000000000000000001"` |
+| `1000000` | 6 | `"1"` |
+| `1234500` | 6 | `"1.2345"` |
+
+Use the bundled `python scripts/exact_amount.py format RAW DECIMALS` and `python scripts/exact_amount.py sum DECIMALS RAW...` commands whenever Python is available. The helper uses strings plus arbitrary-precision integers and never imports or casts through a decimal/floating type. If Python is unavailable, reproduce steps 1–5 exactly in the available language; do not substitute ordinary numeric conversion.
+
 ## Step 4B — Pre-output validation
 
 Before writing any JSON, check every node and edge against these rules. Fix or drop offending entries — do not emit them.
@@ -14,7 +35,7 @@ Before writing any JSON, check every node and edge against these rules. Fix or d
 | Node has chainid | Every node must include `chainid` as an integer for the chain resolved in this run (maintained common-chain table or live `chainlist`; see *Chain resolution*). For single-chain cases, use the run's `{CHAINID}`. | Add the run's `{CHAINID}` when the node was fetched on that chain; drop or split ambiguous nodes |
 | Edge has chainid | Every edge must include `chainid` as an integer for the chain resolved in this run. The edge `chainid` must be the chain where `txhash` was fetched. | Add the source API call's `{CHAINID}`; if unknown, drop the edge and note in gaps |
 | Edge endpoints match the tx | The txhash's transaction must support `source → target`: tx `from`/`to` match, or an internal tx / token-transfer log in it moves value source → target. Deploy edges: tx `from` = deployer, receipt `contractAddress` = deployed contract. **Mint/burn edges use the zero address `0x0000000000000000000000000000000000000000` as the counterparty exactly as the `Transfer` log records it — `mint` → `source` = zero address, `burn` → `target` = zero address. The emitting token/vault contract is never the endpoint; putting it there makes the edge fail on-chain validation because the log's real `from`/`to` is the zero address.** | Correct endpoints from API data — for a mint point `source` at the zero address, for a burn point `target` at it — or drop the edge and note in gaps |
-| Amount is decimal string | Token amounts are `(raw_value / 10^decimals)` formatted as a decimal string, not raw wei | Recompute |
+| Amount is exact decimal string | Amounts follow *Lossless amount arithmetic*: quoted plain-decimal strings produced from raw integer units without numeric/decimal casts, rounding, truncation, or exponents. Every positive raw value remains non-zero | Recompute from the raw API string; if it is unavailable, use `null` rather than `0` |
 | Address is valid hex | Every `address` field is a valid 42-char `0x…` hex string | Drop the node, note in gaps |
 | ENS/name stored separately | ENS names, exchange display names, project aliases, or second-line labels are in `label`/`subLabel`, never `address` | Move display text to `label` or `subLabel`; keep only the verified 0x address in `address` |
 | No duplicate movements | Deduplicate only when the exact same API movement was fetched through more than one query. A tx hash identifies a transaction, not every movement inside it: use `(chainid, txhash)` for a top-level normal tx, `(chainid, txhash, logIndex)` for event-log/token movements, and `(chainid, txhash, traceId)` for internal movements. If an endpoint provides no stable movement index, compare the complete normalized source row rather than dropping same-tx movements. | Remove exact source duplicates, then perform Step 5 edge merging |
@@ -66,7 +87,7 @@ Repeated movements between the same pair collapse into one edge. First remove on
 - `txcount` = number of distinct merged `txhash` values, not the number of movement rows.
 - `txhash` = the **earliest** tx in the group. It is a real hash from this run and must still pass the Step 4B endpoint check (Hard rule 10).
 - `txhashes` = **every** distinct merged hash — including the earliest — once each, in ascending block order, so `txhashes[0] === txhash`. Each entry is a real hash from this run (Hard rule 10 applies to all of them). Cap at 100 hashes per edge; if the group is larger, keep the earliest 100, keep the true `txcount`, and add `edge_txhashes_truncated` to `_meta.gaps`.
-- `amount` = the summed decimal total across all deduplicated movement rows in the group.
+- `amount` = sum the raw smallest-unit integers across all deduplicated movement rows, then format once with *Lossless amount arithmetic*. Do not sum formatted decimal values.
 - `timestamp` = the earliest tx's timestamp.
 
 Single-tx edges (`txcount` = 1) may omit `txhashes` or write it as the one-element `[txhash]`. The legacy `_meta.edge_txhashes` map is superseded by `edge.txhashes` — do not emit it.
@@ -137,7 +158,7 @@ Every edge object must include the `txhash` and `chainid` fields exactly as show
 
 For any ERC-20 movement, also set `edge.token_address` to the emitting token's **contract address** — the `contractAddress` field of the `tokentx` row (or the `Transfer` log's `address`). A symbol alone is not an identity: anyone can deploy a look-alike contract with the same `token` symbol, so the on-chain validator treats a symbol-only edge as ambiguous when two same-symbol contracts moved between the endpoints. Emitting `token_address` binds the amount to one contract and lets it verify. Use `null`/omit for native-coin edges (ETH, BNB, POL…), where `token` is the gas coin and value lives in `tx.value`.
 
-`balance` and `amount` are **bare decimal strings** with no unit suffix and no raw wei — `"12.5"`, never `"12.5 ETH"` and never `"12500000000000000000"`. The unit is the chain's native coin for `balance`, and the edge's `token` for `amount`. Use `null` when unresolved.
+`balance` and `amount` are **exact bare decimal strings** with no unit suffix, exponent, or raw wei — `"12.5"`, never `"12.5 ETH"`, `"1.25e1"`, or `"12500000000000000000"`. Preserve arbitrarily small positive values (for example, `"0.000000000000092695"`) and use `null`, not `"0"`, when unresolved. The unit is the chain's native coin for `balance`, and the edge's `token` for `amount`.
 
 > **AI soft layer**: `label`, `subLabel`, `role`, and `notes` on each node are LLM-assigned from API evidence. All `address`, `chainid`, `txhash`, `amount`, `token`, `timestamp` fields are API-sourced or run-parameter sourced only — never fabricated. `subLabel` is optional and is the right place for an ENS name, alias, or second-line display name; it must never replace `address`.
 

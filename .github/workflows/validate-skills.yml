@@ -31,5 +31,5 @@ jobs:
       - name: Validate examples against case.schema.json
         run: python schema/validate.py
 
-      - name: Run validator regression tests
-        run: python -B -m unittest schema/test_validate.py
+      - name: Run regression tests
+        run: python -B -m unittest discover -s schema -p 'test_*.py'

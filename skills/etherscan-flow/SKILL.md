@@ -41,6 +41,8 @@ Turn a seed transaction hash, wallet/contract address, or resolvable business/en
 12. **No illustrative placeholder cases.** If the request is conceptual, educational, business-model oriented, or asks for a "flow" without a valid tx hash/address, route it to business/entity profile mode only when the entity can be resolved to verified addresses. If it cannot be resolved, do **not** create an Etherscan Flow JSON. On an interactive platform, ask for the relevant tx hash, wallet/contract address, ENS name, or entity scope; on a non-interactive platform, output a single-line refusal and write no file. Never emit placeholder addresses such as `0xENS...`, empty `txhash` strings, estimated amounts, or a `_meta.gaps` note saying no live data was used. And if after Step 4B validation zero nodes or zero edges survive, that **is** a refusal — return the one-line refusal, never pad the case with placeholders to make it look complete.
 13. **`address` is only a 0x hex address.** Every node's `address` field must be the verified 42-character `0x...` address (0x + 20 bytes) from API data. ENS names, project names, aliases, department names, exchange names, and placeholders must never be written into `address`. Fixed field mapping: `label` = primary display name — the Etherscan nametag verbatim when Step 2 resolves one; `subLabel` = the ENS name (or second-line alias) when one exists; `address` = the 0x hex address, nothing else.
 
+14. **Amounts stay exact from API to JSON.** Keep every raw amount as the API's integer string (or exact hex integer) until final formatting. Never cast an amount to `float`, JavaScript `Number`, a database `DECIMAL`/`NUMERIC`, or any other fixed-precision/rounded numeric type; never use `parseFloat`, `Number(...)`, `/ 1e18`, `toFixed`, or scientific notation. Format by inserting the decimal point with string/integer arithmetic, and sum raw smallest-unit integers before formatting. A positive raw amount must never become `"0"`: for example, raw `"92695"` at 18 decimals is exactly `"0.000000000000092695"`. Read and use the lossless procedure in `references/output-spec.md` before emitting an amount.
+
 ## Execution mode — autonomous by default
 
 This skill runs unattended from entry point to saved JSON. When any step says "if interactive, ask …", treat that as a **last resort**, not a checkpoint: prefer the documented non-interactive default and continue without pausing. You may stop to ask the user **at most once**, and only for a true blocker:
@@ -123,7 +125,7 @@ Rules:
 - Never invent a transfer amount, token symbol, or address. This applies to `_meta.financials` too — every figure there must be summed from API responses in this run, not recalled from general knowledge or estimated (no `~16,500,000+`, no `~$4M/yr`). If you did not compute a figure from API data, omit it.
 - Never put an ENS name, text alias, or placeholder in `address`. Example: `address: "vitalik.eth"` or `address: "0xENSUsers-Public"` is invalid. Use the resolved hex address in `address`, `label: "Vitalik"`, and `subLabel: "vitalik.eth"` instead.
 - If a value cannot be resolved from the API, write `null` — never `NaN`, `undefined`, or a guess.
-- Token amounts must be formatted as human-readable decimals (raw value ÷ `10^decimals`). Never emit raw wei as a display amount.
+- Token amounts must be formatted as human-readable decimal **strings** by exact digit placement (raw value scaled by `10^decimals`). Never emit raw wei, cast through a decimal/floating type, round, truncate, or use scientific notation.
 
 ---
 

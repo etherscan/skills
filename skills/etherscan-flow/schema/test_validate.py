@@ -56,6 +56,18 @@ class CaseValidationTests(unittest.TestCase):
         nonzero["nodes"][0]["y"] = 80
         self.assertEqual([], self.schema_errors(nonzero))
 
+    def test_tiny_plain_decimal_string_is_accepted(self):
+        case = self.case()
+        case["edges"][0]["amount"] = "0.000000000000092695"
+        self.assertEqual([], self.schema_errors(case))
+
+    def test_amount_numeric_casts_and_exponents_are_rejected(self):
+        for bad_amount in (0, 0.000000000000092695, "9.2695e-14"):
+            with self.subTest(amount=bad_amount):
+                case = self.case()
+                case["edges"][0]["amount"] = bad_amount
+                self.assertTrue(self.schema_errors(case))
+
     def test_schema_invalid_object_does_not_crash_invariants(self):
         case = self.case()
         case["nodes"][0].pop("id")
