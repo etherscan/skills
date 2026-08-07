@@ -40,6 +40,8 @@ The receipt you just fetched contains a `logs` array — parse it, don't rely on
 
 Every address that appears as `from`/`to`/operator/spender in these logs goes into the **entity set**, and each decoded transfer becomes a candidate edge with the seed tx's real `txhash` (it moves value inside this tx — Data integrity rule). This is what captures NFT mints, ERC-1155 flows, and multi-contract swap/router legs that a single ERC-20 feed would miss.
 
+A `Transfer` whose `from` is the zero address `0x0000000000000000000000000000000000000000` is a **mint** (`type: "mint"`, `source` = the zero address); one whose `to` is the zero address is a **burn** (`type: "burn"`, `target` = the zero address). Use the zero address as the counterparty exactly as the log records it — **never** substitute the emitting token/vault contract for that endpoint, or the on-chain validator (which matches the edge against the log's real `from`/`to`) fails the edge. Every ERC-20 edge, mint and burn included, also carries `token_address` = the log's `address` (the emitting contract), so a shared/compound symbol never has to disambiguate the token.
+
 When creating an edge from receipt logs, set `edge.txhash = log.transactionHash || receipt.result.transactionHash || {TXHASH}`. Do not leave it blank just because the log field is named `transactionHash` instead of `txhash`.
 
 ### Targeted cross-check via account token feeds
