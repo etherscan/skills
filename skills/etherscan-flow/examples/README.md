@@ -14,7 +14,7 @@ It exists so that:
 - editors of `references/output-spec.md` have a canonical "this is valid output"
   reference, and
 - CI can prove the documented schema and a full case still agree on every push
-  (see `.github/workflows/package-skill.yml`).
+  (see [`validate-skills.yml`](../../../.github/workflows/validate-skills.yml)).
 
 A real run of the skill never writes here. Live output is `case-{SHORT_ID}-flow.json`,
 which `.gitignore` keeps out of the repo. Do not treat this fixture as evidence of

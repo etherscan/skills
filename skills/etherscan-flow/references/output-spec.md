@@ -2,6 +2,13 @@
 
 > Part of the `etherscan-flow` skill. MANDATORY read before writing any case JSON — never write the file from memory of this schema. Every Hard rule, the 100-call budget, and the validation rules in `SKILL.md` apply here unchanged.
 
+## Contents
+
+- [Lossless amount arithmetic](#lossless-amount-arithmetic)
+- [Step 4B — Pre-output validation](#step-4b--pre-output-validation)
+- [Step 5 — Write JSON output](#step-5--write-json-output)
+- [`_meta.gaps` entries](#meta-gaps-entries)
+
 ## Lossless amount arithmetic
 
 Treat amounts as digit strings, not general-purpose numbers. This applies to edge `amount`, node `balance`, merged totals, `_meta.financials`, business totals, and incident-analysis asset amounts.
@@ -280,7 +287,7 @@ Also append a `_meta` block after the nodes/edges:
 }
 ```
 
-## `_meta.gaps` entries
+## Meta gaps entries
 
 Every gap is an object. `type` and `detail` are always required; `endpoint` and `error` are required for the blocked types below. Use `detail` — never `note`, `reason`, or another synonym.
 

@@ -2,6 +2,12 @@
 
 > Part of the `etherscan-flow` skill. Read this when the entry point is an address (victim / scammer / unknown role), a free-form narrative, or a pasted document / user-typed link. After these steps, continue with Steps 1–4 in `references/trace-steps.md`. Every Hard rule, the 100-call budget, and the validation rules in `SKILL.md` apply here unchanged.
 
+## Contents
+
+- [Step 0A — Address-first flow](#step-0a--address-first-flow-victim-address)
+- [Step 0B — Scammer-first flow](#step-0b--scammer-first-flow-known-attackerscammer-address)
+- [Step 0C — Hypothesis-first flow](#step-0c--hypothesis-first-flow-user-narrative)
+
 ## Step 0A — Address-first flow (victim address)
 
 Use when the user provides a victim wallet and no tx hash.

@@ -2,6 +2,14 @@
 
 > Part of the `etherscan-flow` skill. Read this for every run that traces: seed-tx resolution, entity classification, hop tracing, financial totals, and the timeline. Before writing any JSON, read `references/output-spec.md`. Every Hard rule, the 100-call budget, and the validation rules in `SKILL.md` apply here unchanged.
 
+## Contents
+
+- [Step 1 — Resolve the seed transactions](#step-1--resolve-the-seed-transactions)
+- [Step 2 — Classify each entity](#step-2--classify-each-entity)
+- [Step 3 — Follow the money](#step-3--follow-the-money-hop-tracing)
+- [Step 3B — Calculate financial totals](#step-3b--calculate-financial-totals)
+- [Step 4 — Build the timeline](#step-4--build-the-timeline)
+
 ## Step 1 — Resolve the seed transaction(s)
 
 > **If you arrived from Step 0A or 0B**, the entity set is already seeded. Skip straight to the API calls below.

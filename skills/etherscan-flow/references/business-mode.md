@@ -2,6 +2,12 @@
 
 > Part of the `etherscan-flow` skill. Read this when Mode B was selected (a DAO / protocol / project / company asked about as a business). ENS resolution is in `references/ens-resolution.md`; Steps 1–4 are in `references/trace-steps.md`. Every Hard rule, the 100-call budget, and the validation rules in `SKILL.md` apply here unchanged.
 
+## Contents
+
+- [Mode B output requirements](#mode-b-output-requirements)
+- [Step 0D — Business/entity profile mode](#step-0d--businessentity-profile-mode)
+- [Maintained known entity scopes](#maintained-known-entity-scopes)
+
 ## Mode B output requirements
 
 Business/entity profile mode must produce:

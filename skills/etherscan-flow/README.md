@@ -1,8 +1,8 @@
 # Etherscan Flow
 
-[![License: MIT](https://img.shields.io/badge/license-MIT-2563eb.svg)](./LICENSE)
+[![License: MIT](https://img.shields.io/badge/license-MIT-2563eb.svg)](https://github.com/etherscan/skills/blob/main/LICENSE)
 [![Etherscan API V2](https://img.shields.io/badge/Etherscan-API%20V2-21325b.svg)](https://docs.etherscan.io/)
-[![Download ZIP](https://img.shields.io/badge/download-ZIP-16a34a.svg)](https://github.com/etherscan/etherscan-flow/archive/refs/heads/main.zip)
+[![Download ZIP](https://img.shields.io/badge/download-ZIP-16a34a.svg)](https://github.com/etherscan/skills/archive/refs/heads/main.zip)
 
 **An installable agent skill for tracing, verifying, and visualizing on-chain money flows.**
 
@@ -43,89 +43,33 @@ Rate control is key-aware. The skill does not assume a fixed requests-per-second
 
 ## Installation
 
-Install the complete repository; `SKILL.md` depends on the workflows and schemas in `references/`.
+Install the complete `skills/etherscan-flow/` directory. Required workflow detail lives in `references/`, the deterministic amount helper lives in `scripts/`, and `schema/` plus `examples/` support validation. Copying `SKILL.md` alone is incomplete.
 
-### Download as ZIP
+### Skills CLI
 
-[**Download the latest `main` branch as a ZIP**](https://github.com/etherscan/etherscan-flow/archive/refs/heads/main.zip)
+Install just this skill:
 
-Every push to `main` also builds a clean `etherscan-flow.zip` in the repository's GitHub Actions artifacts. That package contains the root `SKILL.md`, bundled references, schema, examples, this README, and the license.
-
-For Claude.ai, open [Claude Skills](https://claude.ai/customize/skills), select **Upload a skill**, and upload the downloaded file. On paid plans, allowlist `api.etherscan.io` in the skill's network settings.
-
-For a local agent, extract the ZIP, rename `etherscan-flow-main` to `etherscan-flow`, and place it in the appropriate skills directory below.
-
-### Install with Git
-
-Choose your agent and operating system.
-
-<details open>
-<summary><b>Claude Code (CLI)</b></summary>
-
-Clone into your personal skills folder, then invoke `/etherscan-flow`.
-
-**macOS / Linux**
 ```bash
-mkdir -p ~/.claude/skills
-git clone https://github.com/etherscan/etherscan-flow.git ~/.claude/skills/etherscan-flow
+npx skills add etherscan/skills --skill etherscan-flow
 ```
 
-**Windows (Command Prompt / CMD)**
-```bat
-if not exist %USERPROFILE%\.claude\skills mkdir %USERPROFILE%\.claude\skills
-git clone https://github.com/etherscan/etherscan-flow.git %USERPROFILE%\.claude\skills\etherscan-flow
-```
+### Git or repository ZIP
 
-> CMD does not expand `~`. Use `%USERPROFILE%` exactly as shown.
+Clone or [download the `etherscan/skills` repository](https://github.com/etherscan/skills/archive/refs/heads/main.zip), then copy its `skills/etherscan-flow/` directory into your agent's skills directory:
 
-**Windows (PowerShell)**
-```powershell
-New-Item -ItemType Directory -Force ~/.claude/skills | Out-Null
-git clone https://github.com/etherscan/etherscan-flow.git "$env:USERPROFILE\.claude\skills\etherscan-flow"
-```
+| Agent | Destination |
+|---|---|
+| Codex | `~/.codex/skills/etherscan-flow/` |
+| Claude Code | `~/.claude/skills/etherscan-flow/` |
+| Project-scoped Codex | `.codex/skills/etherscan-flow/` |
 
-Then in Claude Code: `/etherscan-flow trace this scam 0x…`
-</details>
+The copied directory must have `SKILL.md` at its root.
 
-<details>
-<summary><b>Codex CLI</b></summary>
+### Claude.ai upload
 
-Codex reads skills from `~/.codex/skills/` (support added Dec 2025). Clone into it, and Codex auto-discovers the skill from `SKILL.md`'s name + description.
+For [Claude Skills](https://claude.ai/customize/skills), download and extract the repository, then create a ZIP whose archive root is the contents of `skills/etherscan-flow/`—not the monorepo root. Upload that ZIP and, on paid plans, allowlist `api.etherscan.io` in the skill's network settings.
 
-**macOS / Linux**
-```bash
-mkdir -p ~/.codex/skills
-git clone https://github.com/etherscan/etherscan-flow.git ~/.codex/skills/etherscan-flow
-```
-
-**Windows (Command Prompt / CMD)**
-```bat
-if not exist %USERPROFILE%\.codex\skills mkdir %USERPROFILE%\.codex\skills
-git clone https://github.com/etherscan/etherscan-flow.git %USERPROFILE%\.codex\skills\etherscan-flow
-```
-
-> CMD does not expand `~`. Use `%USERPROFILE%` exactly as shown.
-
-**Windows (PowerShell)**
-```powershell
-New-Item -ItemType Directory -Force ~/.codex/skills | Out-Null
-git clone https://github.com/etherscan/etherscan-flow.git "$env:USERPROFILE\.codex\skills\etherscan-flow"
-```
-
-Prefer to scope it to one project? Clone into `.codex/skills/etherscan-flow` in your repo instead.
-</details>
-
-<details>
-<summary><b>Claude.ai — the web chat UI</b></summary>
-
-> **Note:** "Claude.ai" here means the **web chat interface** at [claude.ai](https://claude.ai), *not* the Claude Code CLI.
-
-1. Download this repo as a ZIP (green **Code** button → **Download ZIP**).
-2. Go to **claude.ai/customize/skills** and upload it.
-3. On paid plans, allowlist `api.etherscan.io` in the skill's network settings so it can reach the API.
-
-⚠️ On the web UI you can only supply a key by **pasting it in chat** or via a **connector** — see the note below on what that means for privacy.
-</details>
+On the web UI, supply the API key by pasting it in chat or through a connector; see the privacy notes below.
 
 ## Your Etherscan API key — and how private it really is
 
@@ -305,10 +249,10 @@ Any MCP client uses the same URL and Bearer header (Codex: `codex mcp add ethers
 | Claude Code | ✅ |
 | Codex CLI | ✅ |
 | Claude.ai (web) | ✅ |
-| Gemini CLI, others | later — [open an issue](https://github.com/etherscan/etherscan-flow/issues) if you want one |
+| Gemini CLI, others | later — [open an issue](https://github.com/etherscan/skills/issues) if you want one |
 
 Coverage grows with demand — tell us what you use.
 
 ## License
 
-[MIT](./LICENSE)
+[MIT](https://github.com/etherscan/skills/blob/main/LICENSE)

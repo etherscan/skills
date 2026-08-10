@@ -11,6 +11,7 @@ skills/
   <skill-name>/
     SKILL.md        # required — the skill entry point (YAML frontmatter + body)
     README.md       # optional — human-facing overview
+    scripts/        # optional — deterministic helpers
     references/     # optional — progressive-loading detail docs
     schema/         # optional — validators, JSON Schema, tests
     examples/       # optional — example outputs
@@ -32,7 +33,7 @@ Skills that ship a `schema/` validator are checked in CI (see
 cd skills/etherscan-flow
 python -m pip install jsonschema
 python schema/validate.py
-python -m unittest schema/test_validate.py
+python -m unittest discover -s schema -p "test_*.py"
 ```
 
 ## Guidelines

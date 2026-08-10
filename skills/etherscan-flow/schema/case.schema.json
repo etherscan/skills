@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/etherscan/etherscan-flow/schema/case.schema.json",
+  "$id": "https://raw.githubusercontent.com/etherscan/skills/main/skills/etherscan-flow/schema/case.schema.json",
   "title": "Etherscan Flow Case",
   "description": "The single JSON document produced by the etherscan-flow skill. Encodes the contract documented in references/output-spec.md. Every address, amount, and txhash must come from a live Etherscan API response — this schema checks shape, not provenance.",
   "type": "object",
