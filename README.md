@@ -23,6 +23,7 @@
 
 | Skill | Install | Description |
 | ----- | ------- | ----------- |
+| [etherscan](./skills/etherscan/SKILL.md) | `npx skills add etherscan/skills --skill etherscan` | Navigate Etherscan website features, API endpoints, CLI commands, and MCP tools, selecting the right interface and verifying current behavior from live official sources. |
 | [etherscan-flow](./skills/etherscan-flow/SKILL.md) | `npx skills add etherscan/skills --skill etherscan-flow` | Trace on-chain money flow via the Etherscan API V2 and write a single Etherscan Flow Case JSON file (nodes + edges). Two modes — strict trace for tx/address investigation, and business/entity profile for income, spending, and treasury questions. Security cases reconstruct an evidence-backed incident mechanism, confidence, and losses. |
 
 ## Installation
@@ -38,6 +39,7 @@ npx skills add etherscan/skills
 Or install a single skill:
 
 ```bash
+npx skills add etherscan/skills --skill etherscan
 npx skills add etherscan/skills --skill etherscan-flow
 ```
 
