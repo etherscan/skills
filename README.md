@@ -42,6 +42,7 @@ Or install a single skill:
 ```bash
 npx skills add etherscan/skills --skill etherscan
 npx skills add etherscan/skills --skill etherscan-flow
+npx skills add etherscan/skills --skill etherscan-transaction-debugger
 ```
 
 ### Without npm
@@ -59,11 +60,14 @@ cp -r etherscan-skills/skills/etherscan ~/.claude/skills/
 # Install etherscan-flow only
 cp -r etherscan-skills/skills/etherscan-flow ~/.claude/skills/
 
-# Install both skills
-cp -r etherscan-skills/skills/etherscan etherscan-skills/skills/etherscan-flow ~/.claude/skills/
+# Install etherscan-transaction-debugger only
+cp -r etherscan-skills/skills/etherscan-transaction-debugger ~/.claude/skills/
+
+# Install all skills
+cp -r etherscan-skills/skills/etherscan etherscan-skills/skills/etherscan-flow etherscan-skills/skills/etherscan-transaction-debugger ~/.claude/skills/
 ```
 
-**Or download the ZIP** from the green *Code* button on GitHub, unzip it, and copy `skills/etherscan`, `skills/etherscan-flow`, or both folders into your skills directory. Copy each complete skill folder so that its `SKILL.md` remains at the folder root.
+**Or download the ZIP** from the green *Code* button on GitHub, unzip it, and copy any or all folders under `skills/` into your skills directory. Copy each complete skill folder so that its `SKILL.md` remains at the folder root.
 
 ## Usage
 

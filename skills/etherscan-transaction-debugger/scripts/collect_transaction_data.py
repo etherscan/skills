@@ -36,7 +36,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def run_json(executable: str, args: list[str], chain: str, required: bool) -> tuple[Any, str | None]:
-    command = [executable, *args, "--chain", chain, "--json"]
+    command = [executable, *args, "--chain", chain, "--output", "json"]
     completed = subprocess.run(command, capture_output=True, text=True, check=False)
     if completed.returncode != 0:
         message = (completed.stderr or completed.stdout or "unknown CLI error").strip()

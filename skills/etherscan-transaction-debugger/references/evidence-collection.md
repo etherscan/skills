@@ -28,13 +28,13 @@ Treat Etherscan as both the primary structured-data source and the human verific
 Confirm the installed syntax with `etherscan --help` and subcommand `--help`; CLI releases can change. Typical Standard-mode commands are:
 
 ```text
-etherscan proxy eth_getTransactionByHash <hash> --chain <chain> --json
-etherscan proxy eth_getTransactionReceipt <hash> --chain <chain> --json
-etherscan transaction status <hash> --chain <chain> --json
-etherscan transaction receipt-status <hash> --chain <chain> --json
-etherscan account txlistinternal --txhash <hash> --chain <chain> --json
-etherscan contract getabi <address> --chain <chain> --json
-etherscan contract getsourcecode <address> --chain <chain> --json
+etherscan proxy eth_getTransactionByHash <hash> --chain <chain> --output json
+etherscan proxy eth_getTransactionReceipt <hash> --chain <chain> --output json
+etherscan transaction status <hash> --chain <chain> --output json
+etherscan transaction receipt-status <hash> --chain <chain> --output json
+etherscan account txlistinternal --txhash <hash> --chain <chain> --output json
+etherscan contract getabi <address> --chain <chain> --output json
+etherscan contract getsourcecode <address> --chain <chain> --output json
 ```
 
 Prefer the bundled collector:

@@ -130,16 +130,26 @@ def decode_log(log: dict[str, Any]) -> tuple[dict[str, Any] | None, dict[str, An
             "log_index": log_index,
         }, None
 
-    if topic0 == APPROVAL and len(topics) >= 3 and words:
-        return None, {
-            "standard": "ERC-20-like",
-            "contract": contract,
-            "owner": address_from_topic(topics[1]),
-            "spender": address_from_topic(topics[2]),
-            "raw_value": words[0],
-            "unlimited_candidate": words[0] == (2**256 - 1),
-            "log_index": log_index,
-        }
+    if topic0 == APPROVAL:
+        if len(topics) >= 4:
+            return None, {
+                "standard": "ERC-721-like",
+                "contract": contract,
+                "owner": address_from_topic(topics[1]),
+                "approved_address": address_from_topic(topics[2]),
+                "token_id": integer(topics[3]),
+                "log_index": log_index,
+            }
+        if len(topics) >= 3 and words:
+            return None, {
+                "standard": "ERC-20-like",
+                "contract": contract,
+                "owner": address_from_topic(topics[1]),
+                "spender": address_from_topic(topics[2]),
+                "raw_value": words[0],
+                "unlimited_candidate": words[0] == (2**256 - 1),
+                "log_index": log_index,
+            }
 
     if topic0 == APPROVAL_FOR_ALL and len(topics) >= 3 and words:
         return None, {
@@ -211,7 +221,15 @@ def summarize(bundle: dict[str, Any]) -> dict[str, Any]:
         add_address(addresses, transaction.get(key))
     add_address(addresses, receipt.get("contractAddress"))
     for movement in native_movements + transfers + permissions:
-        for key in ("contract", "from", "to", "owner", "spender", "operator"):
+        for key in (
+            "contract",
+            "from",
+            "to",
+            "owner",
+            "spender",
+            "operator",
+            "approved_address",
+        ):
             add_address(addresses, movement.get(key))
 
     warnings = list(bundle.get("collection_warnings") or [])
