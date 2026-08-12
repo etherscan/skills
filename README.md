@@ -25,6 +25,7 @@
 | ----- | ------- | ----------- |
 | [etherscan](./skills/etherscan/SKILL.md) | `npx skills add etherscan/skills --skill etherscan` | Navigate Etherscan website features, API endpoints, CLI commands, and MCP tools, selecting the right interface and verifying current behavior from live official sources. |
 | [etherscan-flow](./skills/etherscan-flow/SKILL.md) | `npx skills add etherscan/skills --skill etherscan-flow` | Trace on-chain money flow via the Etherscan API V2 and write a single Etherscan Flow Case JSON file (nodes + edges). Two modes — strict trace for tx/address investigation, and business/entity profile for income, spending, and treasury questions. Security cases reconstruct an evidence-backed incident mechanism, confidence, and losses. |
+| [etherscan-transaction-debugger](./skills/etherscan-transaction-debugger/SKILL.md) | `npx skills add etherscan/skills --skill etherscan-transaction-debugger` | Analyze and explain one or two EVM transactions from live Etherscan data, with human-verifiable evidence links. Reconstructs the supported execution path, decodes calls and events, summarizes asset and permission changes, and explains failures — with confidence ratings and stated limitations. |
 
 ## Installation
 
