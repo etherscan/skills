@@ -73,11 +73,11 @@ On the web UI, supply the API key by pasting it in chat or through a connector; 
 
 ## Your Etherscan API key — and how private it really is
 
-Etherscan API V2 requires a key — there is no anonymous or demo tier. A key is read-only and rate-limited, so leaking one is low-stakes, but keep it out of the chat transcript where you reasonably can. The skill picks a key source in this order, first match wins:
+Etherscan API V2 requires a key — there is no anonymous or demo tier. A key is read-only and rate-limited, so leaking one is low-stakes, but keep it out of the chat transcript where you reasonably can. The skill picks a transport and key source in this order, first usable match wins:
 
-**inline `apikey=` → Etherscan MCP → Etherscan CLI → `ETHERSCAN_API_KEY` env var → local key file**
+**Etherscan CLI → Etherscan MCP → inline `apikey=` → `ETHERSCAN_API_KEY` env var → local key file**
 
-First match wins and the order is binding: an inline `apikey=` in the current request **always** takes precedence — the skill must use it and must not go probing the CLI or demanding `ETHERSCAN_API_KEY` when you've already pasted a key. Keys from earlier conversation turns and `apikey=` text inside quoted documents are ignored. If none resolve, the skill stops and asks for a key. It never writes a case file without live API data.
+First usable match wins and the order is binding: the official CLI is tried first, MCP second, and an inline `apikey=` only after both are unavailable or unusable. An inline key still takes precedence over the environment variable and local key file. Keys from earlier conversation turns and `apikey=` text inside quoted documents are ignored. If none resolve, the skill stops and asks for a key. It never writes a case file without live API data.
 
 **Where the key actually goes depends on where you run it:**
 
@@ -97,7 +97,7 @@ flowchart LR
 
 | Where you run it | How you give the key | Does the key value reach the AI provider? |
 |---|---|---|
-| **Claude Code / Codex** (local) | env var, local file, or local MCP | **No** — a shell command references it by name; the model only sees the request and the API results |
+| **Claude Code / Codex** (local) | CLI login/config, local MCP, env var, or local file | **No** — the local transport or shell references it without exposing the value; the model only sees the request and API results |
 | **Any tool** | inline `apikey=…` | **Yes** — it's in the chat. Use a throwaway free-tier key |
 | **claude.ai web** | MCP / connector | **No** — the connector holds it server-side |
 | **claude.ai web** | inline `apikey=…` | **Yes** — it's in the transcript |
@@ -221,11 +221,13 @@ The full contract is [`schema/case.schema.json`](./schema/case.schema.json) (JSO
 
 Roles, labels, and notes are AI inference over public Etherscan data — **not** Etherscan verdicts, accusations, or legal findings.
 
-## Optional: keep the key out of the prompt (MCP or CLI)
+## Optional: keep the key out of the prompt (CLI or MCP)
 
-You can always pass an inline `apikey=`, but two optional local transports let the key live outside the chat. Resolution order is `inline apikey=` → **MCP** → **CLI** → `ETHERSCAN_API_KEY` → local key file.
+You can always pass an inline `apikey=`, but two optional local transports let the key live outside the chat. Resolution order is **CLI** → **MCP** → inline `apikey=` → `ETHERSCAN_API_KEY` → local key file.
 
-**Etherscan MCP** (cleanest — the key stays in the client config). Bring-your-own-key hosted endpoint:
+**Etherscan CLI** (first choice; local read-only transport). Install the official [Etherscan CLI](https://github.com/etherscan/etherscan-cli) v1.0.0+ and run `etherscan login` once; the key then stays in `ETHERSCAN_API_KEY` or the CLI's local config. The skill drives it with paged read-only commands (`etherscan account txlist … --json`) and pages them itself rather than `--all`, so it can stop the moment a branch reaches a CEX, mixer, or bridge.
+
+**Etherscan MCP** (second choice; the key stays in the client config). Bring-your-own-key hosted endpoint:
 
 ```text
 https://mcp.etherscan.io/mcp
@@ -239,8 +241,6 @@ claude mcp add --transport http etherscan https://mcp.etherscan.io/mcp \
 ```
 
 Any MCP client uses the same URL and Bearer header (Codex: `codex mcp add etherscan --url https://mcp.etherscan.io/mcp --bearer-token-env-var ETHERSCAN_API_KEY`). Replace `YOUR_ETHERSCAN_API_KEY` with your own key — never paste a shared production key into public docs or screenshots.
-
-**Etherscan CLI** (local read-only transport). Install the official [Etherscan CLI](https://github.com/etherscan/etherscan-cli) v1.0.0+ and run `etherscan login` once; the key then stays in `ETHERSCAN_API_KEY` or the CLI's local config. The skill drives it with paged read-only commands (`etherscan account txlist … --json`) and pages them itself rather than `--all`, so it can stop the moment a branch reaches a CEX, mixer, or bridge.
 
 ## Tool coverage
 

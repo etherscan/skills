@@ -1,22 +1,22 @@
-# Etherscan Flow — Transports: MCP, CLI, and env-key details
+# Etherscan Flow — Transports: CLI, MCP, and env-key details
 
-> Part of the `etherscan-flow` skill. Read this when the run resolved to the MCP or CLI transport (credentials steps 2–3), or when checking `ETHERSCAN_API_KEY` (credentials step 4). Every Hard rule, the 100-call budget, and the validation rules in `SKILL.md` apply here unchanged.
+> Part of the `etherscan-flow` skill. Read this when the run resolved to the CLI or MCP transport (credentials steps 1–2), or when checking `ETHERSCAN_API_KEY` (credentials step 4). Every Hard rule, the 100-call budget, and the validation rules in `SKILL.md` apply here unchanged.
 
 Initialize the canonical query ledger and adaptive rate controller from `performance.md` before issuing transport calls. Do not impose or pass a global skill-level fixed requests-per-second value: the effective limit belongs to the user's key/plan, endpoint, and transport. The CLI-process launch gate below only preserves that transport's own default across separate invocations; never copy it to MCP or HTTP.
 
 ## Transport call mapping
 
+> **CLI transport:** if you resolved to the official `etherscan` CLI v1+ (credentials step 1), ignore the raw HTTP URLs in Steps 1–4 and call the equivalent read-only CLI command with `--json`, `--chain {CHAIN_NAME_OR_ID}`, and pagination flags where applicable. The CLI resolves credentials from `--api-key`, then `ETHERSCAN_API_KEY`, then the plaintext config written by `etherscan login`. Do not pass `--api-key`: it places the key in `argv`, where it is visible to process listings and shell history (Hard rule 6). A usable CLI wins even when MCP or an inline `apikey=` is also available. Every data-integrity, budget (Hard rule 8), and validation rule applies identically on all transports.
+
 > **MCP transport:** if you resolved to the Etherscan MCP server (credentials step 2), ignore the raw HTTP URLs in Steps 1–4. For each `module={M}&action={A}` call below, invoke the Etherscan MCP tool that performs the same operation (matching module/action — e.g. `account`/`txlist`, `account`/`tokentx`, `account`/`txlistinternal`, `proxy`/`eth_getTransactionByHash`, `proxy`/`eth_getTransactionReceipt`, `nametag`/`getaddresstag`, `contract`/`getsourcecode`), passing the same `chainid`, `address`/`txhash`, and pagination parameters. Do not pass a key — the MCP server supplies it. Every data-integrity, budget (Hard rule 8), and validation rule applies identically on all transports.
 
-> **CLI transport:** if you resolved to the official `etherscan` CLI v1+ (credentials step 3), ignore the raw HTTP URLs in Steps 1–4 and call the equivalent read-only CLI command with `--json`, `--chain {CHAIN_NAME_OR_ID}`, and pagination flags where applicable. The CLI resolves credentials from `--api-key`, then `ETHERSCAN_API_KEY`, then the plaintext config written by `etherscan login`. Do not pass `--api-key`: it places the key in `argv`, where it is visible to process listings and shell history (Hard rule 6). This branch is reached only when the prompt did not contain `apikey=`. Every data-integrity, budget (Hard rule 8), and validation rule applies identically on all transports.
-
-## CLI transport — command table and behaviour (credentials step 3)
+## CLI transport — command table and behaviour (credentials step 1)
 
 Require the production command contract before using this table:
 
 1. Run `etherscan version`; accept `1.0.0` or newer.
 2. Run `etherscan whoami`; it shows the active chain and a masked key. Treat `(none — run 'etherscan login')` as an unresolved CLI credential.
-3. If the executable is older, either v1 command is absent, or `whoami` reports no credential, do not guess between legacy command shapes. Fall through to `ETHERSCAN_API_KEY` and then the local key-file source. If no fallback resolves, ask the user to install/update the official v1+ CLI and run `etherscan login`, or to provide another key source.
+3. If the executable is older, either v1 command is absent, or `whoami` reports no credential, do not guess between legacy command shapes. Fall through in order to MCP, the current invocation's inline `apikey=`, `ETHERSCAN_API_KEY`, and then the local key-file source. If no fallback resolves, ask the user to install/update the official v1+ CLI and run `etherscan login`, or to provide another key source.
 
 Map API calls to CLI commands:
 
@@ -37,7 +37,7 @@ Map API calls to CLI commands:
 | `contract` / `getsourcecode` | `etherscan contract getsourcecode {ADDRESS} --chain {CHAIN} --json` |
 | `nametag` / `getaddresstag` | `etherscan nametag getaddresstag {ADDR1,ADDR2,…} --chain {CHAIN} --json` |
 
-**`chainlist` on non-HTTP transports.** Production CLI v1 exposes `etherscan chains list`, which lists the chains built into that binary and costs no API call. Use the maintained common-chain table in `SKILL.md` without a live lookup. For a name or ID outside that table, issue the keyless `GET https://api.etherscan.io/v2/chainlist` (the live list is authoritative for unknown entries); accept status `1` (available) or `2` (degraded), record the `chain_degraded` gap required by *Chain resolution* for status `2`, and count that request against the 100-call budget. Treat status `0` or an absent entry as unsupported. If a resolved chain is absent from `etherscan chains list`, the installed CLI cannot address it. Fall through to HTTP only when `ETHERSCAN_API_KEY` or the local key-file source resolves; do not extract the CLI's saved config key. If neither HTTP source resolves, ask the user to update the CLI or provide `apikey=` / `ETHERSCAN_API_KEY` rather than substituting another chain.
+**`chainlist` on non-HTTP transports.** Production CLI v1 exposes `etherscan chains list`, which lists the chains built into that binary and costs no API call. Use the maintained common-chain table in `SKILL.md` without a live lookup. For a name or ID outside that table, issue the keyless `GET https://api.etherscan.io/v2/chainlist` (the live list is authoritative for unknown entries); accept status `1` (available) or `2` (degraded), record the `chain_degraded` gap required by *Chain resolution* for status `2`, and count that request against the 100-call budget. Treat status `0` or an absent entry as unsupported. If a resolved chain is absent from `etherscan chains list`, the installed CLI cannot address it. Fall through in the normal order to MCP and then HTTP backed by an inline `apikey=`, `ETHERSCAN_API_KEY`, or the local key file; do not extract the CLI's saved config key. If none resolves, ask the user to update the CLI or configure one of those fallbacks rather than substituting another chain.
 
 Notes on CLI behaviour that the skill depends on:
 
@@ -47,7 +47,7 @@ Notes on CLI behaviour that the skill depends on:
 - **Advanced filters.** `txlist`, `txlistinternal`, `tokentx`, `tokennfttx`, and `token1155tx` accept `--from`, `--to`, and required `--fromto-opr and|or`. Do not combine these with the positional/`--address` filter. Use them only when the procedure needs a directed pair or claim-specific query; otherwise retain address-based paging so both inflows and outflows remain visible.
 - **Round trips and rate ownership.** Production v1 applies its client-side limiter inside one process (default 3 requests/second), but separate manual-page invocations do not share it. Execute CLI commands sequentially and use one run-scoped launch gate: start successive CLI API commands at least 350 ms apart, counting process runtime toward that interval. Do not launch a parallel wave of subprocesses or pass the hidden `--rate-limit` override. Honor stderr retry/rate-limit signals and reduce subsequent work after a limit response. This gate mirrors the CLI's own default only; MCP and HTTP retain the adaptive wave behavior in `performance.md`.
 
-If the CLI command fails because it is not installed, not logged in, or lacks a required endpoint, fall through to the next key source. If it fails because the API returns an error, record that API error in `_meta.gaps` and continue where possible.
+If the CLI command fails because it is not installed, not logged in, cannot address the selected chain, or lacks a required endpoint, fall through to MCP and then the remaining key sources in the binding order. If it fails because the API returns an error, record that API error in `_meta.gaps` and continue where possible.
 
 **Separate the two failure modes — they are different facts and they are not each other's evidence.**
 
