@@ -11,6 +11,42 @@ permissions:
   contents: read
 
 jobs:
+  skill-structure:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install structural validator dependency
+        run: python -m pip install --quiet PyYAML
+
+      - name: Validate every skill directory
+        run: python scripts/validate_skills.py
+
+      - name: Run structural validator regression tests
+        run: python -B -m unittest discover -s tests -p 'test_*.py'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Smoke-test Skills CLI discovery
+        shell: bash
+        run: |
+          mapfile -t skill_dirs < <(find skills -mindepth 1 -maxdepth 1 -type d -print | sort)
+          test "${#skill_dirs[@]}" -gt 0
+          for skill_dir in "${skill_dirs[@]}"; do
+            output="$(npx --yes skills@1.5.22 add "./$skill_dir" --list 2>&1)"
+            printf '%s\n' "$output"
+            grep -F "Found 1 skill" <<< "$output"
+          done
+
   etherscan-flow:
     runs-on: ubuntu-latest
     defaults:

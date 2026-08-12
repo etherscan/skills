@@ -26,8 +26,20 @@ skills/
 
 ## Validation
 
-Skills that ship a `schema/` validator are checked in CI (see
-`.github/workflows/validate-skills.yml`). To run the `etherscan-flow` validator locally:
+CI validates the structure and Skills CLI discovery of every immediate directory
+under `skills/`. Run the repository-wide checks locally with:
+
+```bash
+python -m pip install PyYAML
+python scripts/validate_skills.py
+python -B -m unittest discover -s tests -p "test_*.py"
+for skill_dir in skills/*; do
+  npx --yes skills@1.5.22 add "./$skill_dir" --list
+done
+```
+
+Skills that ship additional validators are also checked in CI (see
+`.github/workflows/validate-skills.yml`). To run the `etherscan-flow` checks locally:
 
 ```bash
 cd skills/etherscan-flow

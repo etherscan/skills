@@ -1,0 +1,4 @@
+interface:
+  display_name: "Etherscan"
+  short_description: "Navigate Etherscan across web, API, CLI, and MCP"
+  default_prompt: "Use $etherscan to choose the right Etherscan interface and complete this blockchain explorer task."

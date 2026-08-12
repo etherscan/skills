@@ -23,6 +23,7 @@
 
 | Skill | Install | Description |
 | ----- | ------- | ----------- |
+| [etherscan](./skills/etherscan/SKILL.md) | `npx skills add etherscan/skills --skill etherscan` | Navigate Etherscan website features, API endpoints, CLI commands, and MCP tools, selecting the right interface and verifying current behavior from live official sources. |
 | [etherscan-flow](./skills/etherscan-flow/SKILL.md) | `npx skills add etherscan/skills --skill etherscan-flow` | Trace on-chain money flow via the Etherscan API V2 and write a single Etherscan Flow Case JSON file (nodes + edges). Two modes — strict trace for tx/address investigation, and business/entity profile for income, spending, and treasury questions. Security cases reconstruct an evidence-backed incident mechanism, confidence, and losses. |
 
 ## Installation
@@ -38,6 +39,7 @@ npx skills add etherscan/skills
 Or install a single skill:
 
 ```bash
+npx skills add etherscan/skills --skill etherscan
 npx skills add etherscan/skills --skill etherscan-flow
 ```
 
@@ -49,10 +51,18 @@ A skill is just a folder with a `SKILL.md` — no package manager required.
 
 ```bash
 git clone https://github.com/etherscan/skills.git etherscan-skills
+
+# Install etherscan only
+cp -r etherscan-skills/skills/etherscan ~/.claude/skills/
+
+# Install etherscan-flow only
 cp -r etherscan-skills/skills/etherscan-flow ~/.claude/skills/
+
+# Install both skills
+cp -r etherscan-skills/skills/etherscan etherscan-skills/skills/etherscan-flow ~/.claude/skills/
 ```
 
-**Or download the ZIP** from the green *Code* button on GitHub, unzip, and copy the `skills/etherscan-flow` folder into your skills directory.
+**Or download the ZIP** from the green *Code* button on GitHub, unzip it, and copy `skills/etherscan`, `skills/etherscan-flow`, or both folders into your skills directory. Copy each complete skill folder so that its `SKILL.md` remains at the folder root.
 
 ## Usage
 
