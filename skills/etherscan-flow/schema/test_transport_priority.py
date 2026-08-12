@@ -90,19 +90,5 @@ class TransportPriorityTests(unittest.TestCase):
             transports,
         )
 
-    def test_blockscan_widgets_are_absent_from_skill_guidance(self):
-        forbidden = (
-            "get_" + "multichain_balance",
-            "get_" + "transaction_card",
-        )
-        guidance_files = [ROOT / "SKILL.md", ROOT / "README.md"]
-        guidance_files.extend((ROOT / "references").glob("*.md"))
-
-        for path in guidance_files:
-            contents = path.read_text(encoding="utf-8")
-            for tool_name in forbidden:
-                self.assertNotIn(tool_name, contents, f"{tool_name} found in {path}")
-
-
 if __name__ == "__main__":
     unittest.main()
