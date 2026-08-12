@@ -15,13 +15,17 @@ Route an Etherscan task to the right interface, then to the right page, endpoint
 
 ## Follow the workflow
 
-1. Clarify only the chain, target, intent, plan, or output details that the request leaves unresolved.
-2. Discover the Etherscan-relevant tools and connections available in the current environment, then briefly tell the user what is available.
-3. Honor an explicitly requested interface; otherwise select one from [Select the interface](#select-the-interface).
-4. Read that interface reference completely before acting. Read another only for an explicit comparison, required fallback, or genuinely cross-interface workflow.
-5. Confirm the exact chain and chain ID through the selected reference's authority. Never infer support from EVM compatibility.
-6. Construct the exact page, endpoint, command, or tool call documented by that authority.
-7. Return the result with throttling, pagination, truncation, plan restrictions, and error context intact.
+1. Before discovering interfaces, consider the task-relevant specialized skills available in the current environment. Match the user's use case against their descriptions and select the most specific applicable skill; honor an explicitly requested skill when it applies.
+2. When a specialized skill matches, read and follow it completely. Let it own clarification, capability discovery, transport selection, execution, and output; do not independently impose Website, API, CLI, or MCP or add output that violates its contract. Stop this workflow unless the selected skill explicitly returns control.
+3. For example, use [the `etherscan-flow` skill](../etherscan-flow/SKILL.md) for tracing or following money across hops; scam, hack, exploit, drain, phishing, rug-pull, or compromised-wallet investigations; transaction or address flow visualization and case generation; or business and entity income, revenue, fees, spending, expenses, and treasury profiles. Preserve its JSON-only output and per-operation transport priority: official Etherscan CLI → Etherscan MCP → current-invocation `apikey=` → other documented key sources.
+4. Keep ordinary explorer navigation in this workflow. For example, route "show this transaction on Etherscan" to the Website unless the user asks to trace or visualize its flow.
+5. When no specialized skill matches, clarify only the chain, target, intent, plan, or output details that the request leaves unresolved.
+6. Discover the Etherscan-relevant tools and connections available in the current environment, then briefly tell the user what is available.
+7. Honor an explicitly requested interface; otherwise select one from [Select the interface](#select-the-interface).
+8. Read that interface reference completely before acting. Read another only for an explicit comparison, required fallback, or genuinely cross-interface workflow.
+9. Confirm the exact chain and chain ID through the selected reference's authority. Never infer support from EVM compatibility.
+10. Construct the exact page, endpoint, command, or tool call documented by that authority.
+11. Return the result with throttling, pagination, truncation, plan restrictions, and error context intact.
 
 ## Discover local capabilities
 
