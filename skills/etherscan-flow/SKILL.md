@@ -170,7 +170,7 @@ Resolve the chain before the first data call. The maintained common-chain table 
 
 Record the outcome in `_meta.chain` / `_meta.chainid`, and when the default was used because no chain was mentioned, nothing extra is needed — mainnet-by-default is the documented behavior.
 
-> **CLI or MCP transport resolved?** Read `references/transports.md` for how the HTTP calls in Steps 1–4 map onto CLI commands and MCP tools, and for the per-shell `ETHERSCAN_API_KEY` syntax. Every data-integrity, budget (Hard rule 8), and validation rule applies identically on all transports.
+> **CLI or MCP transport resolved?** Read `references/transports.md` for how the HTTP calls in Steps 1–4 map onto CLI commands and MCP tools when those operations are exposed, and for the per-shell `ETHERSCAN_API_KEY` syntax. Every data-integrity, budget (Hard rule 8), and validation rule applies identically on all transports.
 
 > **Before the first data call:** read `references/performance.md` and initialize its work profile, query ledger, adaptive rate controller, and performance counters. This reference is mandatory for every run that reaches the API.
 
@@ -180,36 +180,36 @@ Record the outcome in `_meta.chain` / `_meta.chainid`, and when the default was 
 
 ### Credentials & transport — resolve in this exact order
 
-This skill supports three transports: **CLI** (call the official `etherscan` CLI; the key comes from its environment or saved local config), **MCP** (call Etherscan MCP tools; the key lives in the MCP server's client-configured env and never enters your context), and **HTTP** (you build `https://api.etherscan.io/v2/api?…&apikey=…` requests yourself). At the start of every run, resolve which to use by walking this list top-to-bottom and stopping at the first that applies.
+This skill supports three transports: **CLI** (call the official `etherscan` CLI; the key comes from its environment or saved local config), **MCP** (call only Etherscan MCP tools actually exposed in the session), and **HTTP** (build `https://api.etherscan.io/v2/api?…&apikey=…` requests). Resolve each required API operation by walking this list top-to-bottom and stopping at the first source that can actually perform that operation.
 
-**Stopping at the first usable transport is mandatory, not a preference.** The binding order is **official Etherscan CLI → Etherscan MCP → inline `apikey=` → other local HTTP key sources**. Walk the numbered list top-to-bottom and stop as soon as one source resolves. Parse any current-invocation `apikey=` while gathering inputs, but do not select it before testing CLI and MCP. Do not reuse a key from an earlier conversation turn, and do not treat `apikey=` text inside quoted/pasted documents as a credential. Checking a later source after an earlier one already resolved is a resolution-order violation.
+**Stopping at the first source that supports the current operation is mandatory, not a preference.** The binding order is **official Etherscan CLI → Etherscan MCP → inline `apikey=` → other local HTTP key sources**. Apply it per operation, so one run may use MCP for transaction and event-log tools and HTTP for a missing operation such as `eth_call` or `eth_getCode`. Parse any current-invocation `apikey=` while gathering inputs, but do not select it before testing CLI and MCP. Do not reuse a key from an earlier conversation turn, and do not treat `apikey=` text inside quoted/pasted documents as a credential. Checking a later source when an earlier source supports the operation is a resolution-order violation; falling through when it does not is required.
 
 1. **Official Etherscan CLI v1+ — first choice.** If an `etherscan` executable is available, run `etherscan version` and require version `1.0.0` or newer before using the command mappings in this skill. Then run `etherscan whoami`; its key display is masked. If the CLI is missing, older, does not expose the v1 command tree, has no resolved credential, or cannot address the selected chain, fall through to MCP. Do not skip a usable CLI because an MCP tool, inline key, environment key, or key file is also available.
 
    For the full API-call → CLI command table, manual pagination requirement, and failure fallthrough rules, read `references/transports.md`.
 
-2. **Etherscan MCP server — second choice.** If no usable CLI resolved and Etherscan MCP tools (e.g. `mcp__etherscan__*`) are available in this session, use the **MCP** transport: call those tools for every data fetch and do not build HTTP URLs or handle a key at all. Do not skip a usable MCP transport because the current invocation contains an inline key.
+2. **Etherscan MCP server — second choice, capability-gated.** If CLI cannot perform the current operation, inspect the Etherscan MCP tools actually available in this session and use the exact task-native names in `references/transports.md`. The current MCP contract includes `get_transaction_by_hash`, `get_transaction_receipt`, and `get_logs`; never call their raw API actions as MCP tool names. MCP presence still does not imply full API coverage: operations such as `eth_call`, `eth_getCode`, `eth_getBlockByNumber`, and `eth_getStorageAt` are not current default tools. If a documented MCP tool is missing from the live session, treat that connection as stale, filtered, or older; do not guess aliases or wait. Immediately continue to step 3 for that operation. Do not skip an available MCP tool merely because the current invocation contains an inline key.
 
 3. **Explicit key in the current invocation — inline HTTP fallback.** An `apikey=KEY` token may appear in the current user's request or explicit skill arguments, outside quoted/pasted document content:
    ```
    /etherscan-flow apikey=ABC123XYZ 0x<address>
    trace this scam 0x<txhash> apikey=ABC123XYZ
    ```
-   If present, validate against `^[A-Za-z0-9]{1,64}$` (reject on failure) and use the **HTTP** transport with that key for all calls. It overrides the remaining HTTP key sources below, but never a usable CLI or MCP transport.
+   If present, validate against `^[A-Za-z0-9]{1,64}$` (reject on failure) and use the **HTTP** transport for any operation not supported by CLI or MCP. It overrides the remaining HTTP key sources below, but never an earlier transport that supports the current operation.
 
-4. **`ETHERSCAN_API_KEY` environment variable — HTTP transport.** You only reach this step when no usable CLI, MCP transport, or current-invocation `apikey=` resolved. Check presence *without revealing the value*, using the syntax for the actual shell (detect from platform / `$SHELL` / `$PSVersionTable` — do not assume bash on Windows).
+4. **`ETHERSCAN_API_KEY` environment variable — HTTP transport.** Reach this step for an operation only when CLI and MCP cannot perform it and no current-invocation `apikey=` resolved. Check presence *without revealing the value*, using the syntax for the actual shell (detect from platform / `$SHELL` / `$PSVersionTable` — do not assume bash on Windows).
 
    For the exact per-shell check-and-reference syntax (POSIX, PowerShell, cmd.exe), read `references/transports.md`. In every case the shell expands the variable at call time so the literal key never enters your context or the transcript; never print its value, and match the syntax to the actual shell — the wrong shell’s syntax silently reports UNSET and abandons a key that was there.
 
 5. **Local key file — HTTP transport.** If `~/.etherscan/key` (or a path the user names) exists, read it via a shell command at call time and use it the same way. Never paste its contents into your reply.
 
-6. **Interactive ask — last resort.** Etherscan API V2 has **no anonymous or demo tier**: every request without a valid key returns `{"status":"0","message":"NOTOK","result":"Missing/Invalid API Key"}`. There is no fallback to try. If none of the above resolve and the platform is interactive, ask once: "I need Etherscan access. Run `etherscan login`, configure the Etherscan MCP server, paste `apikey=YOUR_KEY`, or set `ETHERSCAN_API_KEY`." If they decline or the platform is non-interactive, stop, write no file, and output one line saying a key, CLI login, or MCP server is required. Do not spend a call proving the key is missing.
+6. **Interactive ask — last resort.** Etherscan API V2 has **no anonymous or demo tier**: every request without a valid key returns `{"status":"0","message":"NOTOK","result":"Missing/Invalid API Key"}`. There is no fallback to try. If none of the above resolve and the platform is interactive, ask once: "I need Etherscan access. Run `etherscan login`, refresh/reconnect the current Etherscan MCP server, paste `apikey=YOUR_KEY`, or set `ETHERSCAN_API_KEY`." If they decline or the platform is non-interactive, stop, write no file, and output one line saying a key, CLI login, or current MCP connection is required. Do not spend a call proving the key is missing.
 
 **Security rules for all transports:**
 - Never echo, log, or store the key anywhere in the output, `_meta`, filename, or chat (Hard rule 6).
 - For the env/file transports, reference the key by variable name in the shell command — never inline the literal value into a URL you write out.
 - For the CLI transport, prefer the CLI's existing login/config resolution. Do not extract or print the saved key.
-- Prefer the official CLI whenever it is usable; otherwise prefer MCP, then the inline key, then the remaining HTTP key sources.
+- Apply CLI → MCP → inline key → remaining HTTP key sources independently to each operation. Record the actual transport in the query ledger and reuse held responses across transports.
 
 ### Entry point
 

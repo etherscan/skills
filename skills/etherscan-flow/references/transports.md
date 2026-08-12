@@ -8,7 +8,49 @@ Initialize the canonical query ledger and adaptive rate controller from `perform
 
 > **CLI transport:** if you resolved to the official `etherscan` CLI v1+ (credentials step 1), ignore the raw HTTP URLs in Steps 1–4 and call the equivalent read-only CLI command with `--json`, `--chain {CHAIN_NAME_OR_ID}`, and pagination flags where applicable. The CLI resolves credentials from `--api-key`, then `ETHERSCAN_API_KEY`, then the plaintext config written by `etherscan login`. Do not pass `--api-key`: it places the key in `argv`, where it is visible to process listings and shell history (Hard rule 6). A usable CLI wins even when MCP or an inline `apikey=` is also available. Every data-integrity, budget (Hard rule 8), and validation rule applies identically on all transports.
 
-> **MCP transport:** if you resolved to the Etherscan MCP server (credentials step 2), ignore the raw HTTP URLs in Steps 1–4. For each `module={M}&action={A}` call below, invoke the Etherscan MCP tool that performs the same operation (matching module/action — e.g. `account`/`txlist`, `account`/`tokentx`, `account`/`txlistinternal`, `proxy`/`eth_getTransactionByHash`, `proxy`/`eth_getTransactionReceipt`, `nametag`/`getaddresstag`, `contract`/`getsourcecode`), passing the same `chainid`, `address`/`txhash`, and pagination parameters. Do not pass a key — the MCP server supplies it. Every data-integrity, budget (Hard rule 8), and validation rule applies identically on all transports.
+> **MCP transport:** at credentials step 2, use only tools the Etherscan MCP server actually exposes in the current session. MCP is a partial interface, not a promise that every Etherscan API `module/action` has an equivalent tool. Do not pass a key—the MCP server supplies it. Every data-integrity, budget (Hard rule 8), and validation rule applies identically on all transports.
+
+## MCP capability gate and fallback
+
+The current Etherscan MCP contract (2026-08-12) uses task-native snake_case names. Before each new API operation, inspect the available MCP tool names and input schemas. Never construct or guess a tool name from raw HTTP documentation.
+
+| Etherscan API operation | Current MCP tool | Flow usage |
+|---|---|---|
+| `account/balance` | `get_native_balance` | Native balance |
+| `account/txlist` | `get_transactions` | Normal transactions by address |
+| `account/txlistinternal` | `get_internal_transactions` | Internals by address or parent tx hash |
+| `account/tokentx`, `account/tokennfttx`, `account/token1155tx` | `get_token_transfers` | Set `standard` to `erc20`, `erc721`, or `erc1155` |
+| `nametag/getaddresstag` | `get_address_labels` | One address per MCP call; Pro Plus |
+| `contract/getsourcecode` | `get_contract_source` | Verified source and compiler metadata |
+| `contract/getabi` | `get_contract_abi` | Verified ABI |
+| `contract/getcontractcreation` | `get_contract_creation` | Creator and creation tx for 1–5 contract addresses |
+| `proxy/eth_getTransactionByHash` | `get_transaction_by_hash` | Full transaction object |
+| `proxy/eth_getTransactionReceipt` | `get_transaction_receipt` | Status, gas, contract creation, and receipt logs |
+| `transaction/gettxreceiptstatus` | `get_transaction_receipt_status` | Success/failure flag |
+| `transaction/getstatus` | `get_transaction_status` | Execution error status |
+| `logs/getlogs` | `get_logs` | Event logs by address/topics/block range |
+| `block/getblocknobytime` | `get_block_by_timestamp` | Time-window block resolution |
+| `/v2/chainlist` | `get_supported_chains` | Supported chain IDs |
+
+Pass `chainid` explicitly as a numeric string (for example, `"1"`) to every chain-specific MCP call after chain resolution; `get_supported_chains` takes no `chainid`. The transaction proxy tools return JSON-RPC-shaped results where `null` means not found or pending, not a transport error.
+
+Core transaction input shapes:
+
+- `get_transaction_by_hash`: `{ txhash, chainid }`.
+- `get_transaction_receipt`: `{ txhash, chainid }`.
+- `get_logs`: `{ address?, fromblock?, toblock?, topic0?, topic1?, topic2?, topic3?, topic0_1_opr?, topic1_2_opr?, topic2_3_opr?, chainid, page?, offset? }`. Supply an address and/or at least one topic; `offset` is at most 1000.
+- `get_transactions`, `get_internal_transactions`, and `get_token_transfers` use lowercase `startblock`, `endblock`, `page`, `offset`, and `sort`. `get_internal_transactions` accepts either `address` or `txhash`; `get_token_transfers.standard` is `erc20`, `erc721`, or `erc1155`.
+
+The 16 legacy camelCase aliases are disabled by default. Never select or guess them when a current task-native tool is absent.
+
+**Not in the current default MCP surface:** `proxy/eth_call`, `proxy/eth_getCode`, `proxy/eth_getBlockByNumber`, `proxy/eth_getStorageAt`, historical balance endpoints, and arbitrary proxy/RPC methods. `raw_rpc_call` is planned, not live—never call it until it appears in the session's tool list. Resolve these operations through the next source in the binding order.
+
+- If an exact MCP tool exists and accepts the required inputs, use it.
+- If a tool documented in the table is absent, the connected MCP server is stale, filtered, or older. Do not substitute the raw `module/action` or a legacy camelCase alias. Immediately continue through the binding order for this run: inline `apikey=`, `ETHERSCAN_API_KEY`, then local key file.
+- If the tool exists but cannot express the required chain, hash/address, block range, topics, or pagination, MCP does not support that operation in this session; fall through the same way.
+- Do not call a guessed MCP name, repeatedly search for the same missing tool, wait for it to appear, omit required receipt/log evidence, or abandon the run merely because another MCP tool worked earlier.
+- A run may therefore be mixed-transport. For example, MCP may supply `get_transactions` and `get_transaction_by_hash`, while HTTP supplies `proxy/eth_call`. Keep one canonical query ledger keyed by the transport actually used and never refetch a held response through another transport.
+- If no later HTTP key source resolves, ask once to refresh/reconnect the current MCP server or provide another Etherscan access source as specified in `SKILL.md`; do not hang.
 
 ## CLI transport — command table and behaviour (credentials step 1)
 
@@ -47,14 +89,14 @@ Notes on CLI behaviour that the skill depends on:
 - **Advanced filters.** `txlist`, `txlistinternal`, `tokentx`, `tokennfttx`, and `token1155tx` accept `--from`, `--to`, and required `--fromto-opr and|or`. Do not combine these with the positional/`--address` filter. Use them only when the procedure needs a directed pair or claim-specific query; otherwise retain address-based paging so both inflows and outflows remain visible.
 - **Round trips and rate ownership.** Production v1 applies its client-side limiter inside one process (default 3 requests/second), but separate manual-page invocations do not share it. Execute CLI commands sequentially and use one run-scoped launch gate: start successive CLI API commands at least 350 ms apart, counting process runtime toward that interval. Do not launch a parallel wave of subprocesses or pass the hidden `--rate-limit` override. Honor stderr retry/rate-limit signals and reduce subsequent work after a limit response. This gate mirrors the CLI's own default only; MCP and HTTP retain the adaptive wave behavior in `performance.md`.
 
-If the CLI command fails because it is not installed, not logged in, cannot address the selected chain, or lacks a required endpoint, fall through to MCP and then the remaining key sources in the binding order. If it fails because the API returns an error, record that API error in `_meta.gaps` and continue where possible.
+If the CLI command fails because it is not installed, not logged in, cannot address the selected chain, or lacks a required endpoint, fall through for that operation to MCP and then the remaining key sources in the binding order. If it fails because the API returns an error, record that API error in `_meta.gaps` and continue where possible.
 
 **Separate the two failure modes — they are different facts and they are not each other's evidence.**
 
 | What happened | How to tell | What to record |
 |---------------|-------------|----------------|
 | The API answered "no" | The command ran and returned an error body: plan-gated (`API Exclusive endpoint`), `NOTOK`, rate limit, bad params | A blocked gap quoting that body verbatim, with the `endpoint` (`references/output-spec.md` → *`_meta.gaps` entries*). Do not fall through — the key is fine, this endpoint is not for it |
-| The transport did not answer | Non-zero exit with no API body, binary missing, timeout, no key resolved | Fall through to the next key source. Only if every source fails is it a blocked gap, quoting the transport's own error |
+| The transport did not answer | Non-zero exit with no API body, binary missing, missing MCP tool, timeout, no key resolved | Fall through to the next transport/key source for that operation. Only if every source fails is it a blocked gap, quoting the transport's own error |
 
 `nametag/getaddresstag` is **Pro Plus** and returns `Sorry, it looks like you are trying to access an API Exclusive endpoint` on keys without it. This is expected and benign: it means no curated Etherscan labels are available for this run, so every label must come from observed behaviour (Hard rule 3 applies unchanged). It is a plan fact about one endpoint — it is **not** evidence that the transport is broken, and it says nothing about any other endpoint's availability.
 

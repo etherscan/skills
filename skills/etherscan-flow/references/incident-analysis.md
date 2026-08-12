@@ -85,7 +85,7 @@ An `eth_call` result is a state observation or simulation result. It does not pr
 
 ### 4. Widen event evidence only when needed
 
-Use `logs/getLogs` for the affected contract and a tight block window when the seed receipt cannot establish setup or aftermath. Filter by ABI-derived topics when possible. Relevant events include upgrades, ownership/role changes, oracle updates, borrow/repay, swaps, liquidity changes, mint/burn, governance execution, and emergency actions.
+Use `logs/getlogs` for the affected contract and a tight block window when the seed receipt cannot establish setup or aftermath. The current MCP tool is exactly `get_logs`; never call `logs/getlogs` as an MCP tool name. If `get_logs` is absent from the live session, treat the connection as stale, filtered, or older and immediately fall through to inline-key or other HTTP sources as documented in `references/transports.md`. Filter by ABI-derived topics when possible. Relevant events include upgrades, ownership/role changes, oracle updates, borrow/repay, swaps, liquidity changes, mint/burn, governance execution, and emergency actions.
 
 Never infer a protocol event solely from a token transfer when a more specific event should exist. Absence of a log is meaningful only when the expected signature and searched range are recorded.
 

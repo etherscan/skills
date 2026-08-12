@@ -63,7 +63,7 @@ Parse the returned 32-byte word as an address: take the rightmost 40 hex charact
 - Add an `_meta.candidates` entry noting the ENS name, namehash, resolver address, resolved address, and the `eth_call` evidence.
 - Never invent an address if any ENS step fails.
 
-If a shell approval prompt appears because the runtime command contains expandable strings or embedded expressions, that is the harness approving command execution, not an ENS blocker. Prefer direct MCP/proxy calls when available; otherwise run the read-only Etherscan `eth_call` once and continue.
+If a shell approval prompt appears because the runtime command contains expandable strings or embedded expressions, that is the harness approving command execution, not an ENS blocker. Resolve each `eth_call` through the binding transport order. The current default MCP surface does not expose `eth_call` (`raw_rpc_call` is only planned), so fall through immediately to the available HTTP key source unless a compatible live tool is actually present.
 
 ### 0E-6. Optional reverse ENS lookup for address labels
 

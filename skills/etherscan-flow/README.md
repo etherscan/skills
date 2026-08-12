@@ -77,7 +77,7 @@ Etherscan API V2 requires a key — there is no anonymous or demo tier. A key is
 
 **Etherscan CLI → Etherscan MCP → inline `apikey=` → `ETHERSCAN_API_KEY` env var → local key file**
 
-First usable match wins and the order is binding: the official CLI is tried first, MCP second, and an inline `apikey=` only after both are unavailable or unusable. An inline key still takes precedence over the environment variable and local key file. Keys from earlier conversation turns and `apikey=` text inside quoted documents are ignored. If none resolve, the skill stops and asks for a key. It never writes a case file without live API data.
+First usable match wins for each required API operation: the official CLI is tried first, MCP second, and an inline `apikey=` only when neither exposes that operation. An inline key still takes precedence over the environment variable and local key file. The current MCP tools for core transaction evidence are `get_transaction_by_hash`, `get_transaction_receipt`, and `get_logs`; agents must use those exact names, not raw API action names. MCP presence does not imply full API coverage, so genuinely absent operations such as `eth_call` fall through instead of getting stuck. Keys from earlier conversation turns and `apikey=` text inside quoted documents are ignored. If no source can perform a required operation, the skill asks once for access. It never writes a case file without live API data.
 
 **Where the key actually goes depends on where you run it:**
 
@@ -223,7 +223,7 @@ Roles, labels, and notes are AI inference over public Etherscan data — **not**
 
 ## Optional: keep the key out of the prompt (CLI or MCP)
 
-You can always pass an inline `apikey=`, but two optional local transports let the key live outside the chat. Resolution order is **CLI** → **MCP** → inline `apikey=` → `ETHERSCAN_API_KEY` → local key file.
+You can always pass an inline `apikey=`, but two optional local transports let the key live outside the chat. Per-operation resolution order is **CLI** → **MCP** → inline `apikey=` → `ETHERSCAN_API_KEY` → local key file. MCP uses task-native names such as `get_transaction_by_hash`, `get_transaction_receipt`, and `get_logs`; missing operations automatically fall through.
 
 **Etherscan CLI** (first choice; local read-only transport). Install the official [Etherscan CLI](https://github.com/etherscan/etherscan-cli) v1.0.0+ and run `etherscan login` once; the key then stays in `ETHERSCAN_API_KEY` or the CLI's local config. The skill drives it with paged read-only commands (`etherscan account txlist … --json`) and pages them itself rather than `--all`, so it can stop the moment a branch reaches a CEX, mixer, or bridge.
 
@@ -241,6 +241,8 @@ claude mcp add --transport http etherscan https://mcp.etherscan.io/mcp \
 ```
 
 Any MCP client uses the same URL and Bearer header (Codex: `codex mcp add etherscan --url https://mcp.etherscan.io/mcp --bearer-token-env-var ETHERSCAN_API_KEY`). Replace `YOUR_ETHERSCAN_API_KEY` with your own key — never paste a shared production key into public docs or screenshots.
+
+The current default MCP surface includes `get_transaction_by_hash`, `get_transaction_receipt`, `get_logs`, account transactions/transfers, contract source/ABI/creation, labels, timestamp-to-block lookup, and supported-chain lookup. It does not yet include arbitrary proxy/RPC calls such as `eth_call`, `eth_getCode`, `eth_getBlockByNumber`, or `eth_getStorageAt`; the skill falls through for those operations.
 
 ## Tool coverage
 

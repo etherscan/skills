@@ -84,7 +84,7 @@ Collect every unique address seen across all responses into the **entity set**.
 | **Full** | Seed addresses and endpoints of surviving edges | `eth_getCode` and batched `nametag`; add `balance`, first/last `txlist`, or `getsourcecode` only when that evidence is needed for totals, role, or a surviving label |
 | **Minimal** | Leaf and terminal addresses — token contracts appearing only as a log emitter, landmark hits (CEX/mixer/bridge, already identified and their branch stopped), and any address at the depth limit | `eth_getCode` only, plus the batched `nametag` below |
 
-Resolve `nametag` for the **whole entity set in one batched call** (see below) before you decide tiers — a nametag hit both identifies the address and lets you drop it to Minimal, because a curated label beats any heuristic you would have spent four calls deriving.
+Resolve `nametag` for the **whole entity set** before you decide tiers—a nametag hit both identifies the address and lets you drop it to Minimal, because a curated label beats any heuristic you would have spent four calls deriving. HTTP and CLI batch the set; the current MCP `get_address_labels` tool accepts one address per call, so count and cache each MCP call separately under the run budget.
 
 Budget tiers before starting. Classify only nodes likely to survive into output, and stop enriching a node when its type and evidence-backed role are sufficient. Balance, account age, lifetime activity, and source code are conditional evidence—not a checklist. If the set still cannot fit, classify Full-tier addresses first, downgrade the rest to Minimal, and note `classification_reduced` in `_meta.gaps`.
 
@@ -109,7 +109,7 @@ Repeat with `sort=desc` for last 5 txs.
 ```
 GET https://api.etherscan.io/v2/api?chainid={CHAINID}&module=nametag&action=getaddresstag&address={ADDR1},{ADDR2},{ADDR3},…&apikey={APIKEY}
 ```
-`address` takes a **comma-separated list**. Send surviving entities in as few batched calls as the endpoint accepts—never one call per address. Do not assume a fixed endpoint rate; obey the adaptive transport policy. If the key lacks access, treat the response as "no nametags available", note it once in `_meta.gaps`, and do not retry per address.
+On HTTP and CLI, `address` takes a **comma-separated list**. Send surviving entities in as few batched calls as the endpoint accepts. On MCP, call `get_address_labels` once per address because its current schema is singular; do not send a comma-separated string. Do not assume a fixed endpoint rate; obey the adaptive transport policy and the 100-call ceiling. If the key lacks access, treat the response as "no nametags available", note it once in `_meta.gaps`, and stop label calls rather than retrying the remaining addresses.
 
 Response fields to use (`result` is one entry per requested address — match them back by `address`, do not assume `result[0]`):
 
