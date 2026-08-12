@@ -82,7 +82,7 @@ If Deep mode is unavailable:
 
 ## Analysis Boundaries
 
-For a broad address investigation, laundering path, victim-to-exchange trace, or cross-transaction fund flow, hand off to `$etherscan-flow` or `$tx-case-tracer` when available.
+For a broad address investigation, laundering path, victim-to-exchange trace, or cross-transaction fund flow, hand off to [the `etherscan-flow` skill](../etherscan-flow/SKILL.md) when available.
 
 For a full contract security review, explain that transaction debugging covers observed execution, not all reachable contract behavior.
 
