@@ -30,9 +30,10 @@ Confirm the installed syntax with `etherscan --help` and subcommand `--help`; CL
 ```text
 etherscan proxy eth_getTransactionByHash <hash> --chain <chain> --output json
 etherscan proxy eth_getTransactionReceipt <hash> --chain <chain> --output json
+etherscan proxy eth_getBlockByNumber --tag <hex-block-number> --boolean false --chain <chain> --output json
 etherscan transaction status <hash> --chain <chain> --output json
 etherscan transaction receipt-status <hash> --chain <chain> --output json
-etherscan account txlistinternal --txhash <hash> --chain <chain> --output json
+etherscan account txlistinternal --txhash <hash> --all --chain <chain> --output json
 etherscan contract getabi <address> --chain <chain> --output json
 etherscan contract getsourcecode <address> --chain <chain> --output json
 ```
@@ -45,7 +46,7 @@ python scripts/collect_transaction_data.py <hash> --chain <chain> --include-cont
 python scripts/summarize_transaction.py evidence.json --output summary.json
 ```
 
-The CLI can use its saved login, `ETHERSCAN_API_KEY`, or an explicit flag. Never print, store in the bundle, or repeat the API key.
+The collector applies a 30-second timeout to each CLI request by default; adjust it with `--cli-timeout` when needed. The CLI can use its saved login, `ETHERSCAN_API_KEY`, or an explicit flag. Never print, store in the bundle, or repeat the API key.
 
 ## Fallbacks
 
@@ -91,10 +92,11 @@ The collector writes:
 - `transaction_hash`
 - `transaction`
 - `receipt`
+- `block`
 - `execution_status`
 - `receipt_status`
 - `internal_transactions`
-- `contracts` when requested
+- `contracts` with verified source metadata and its returned ABI when requested
 - `collection_warnings`
 
 Preserve raw values. Add derived calculations to a separate `derived` object so facts remain auditable.

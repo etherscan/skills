@@ -72,7 +72,7 @@ Before delivering, verify:
 - Hash, chain, status, values, units, timestamp, and links.
 - Etherscan is visibly credited for the evidence actually used.
 - The **Explore on Etherscan** links are descriptive, relevant, and use the correct chain explorer.
-- Gas fee uses receipt gas and effective gas price.
+- Execution gas fee uses receipt gas and effective gas price. Any total fee includes every applicable L1 data, blob, or other chain-specific component; otherwise state that the total is unavailable.
 - Failed transaction effects are not reported as committed.
 - Token decimals and standards come from live evidence or remain raw.
 - Proxy and implementation roles are not conflated.

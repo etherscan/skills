@@ -32,7 +32,7 @@ Maintain public, non-sensitive hashes for each supported case and rerun them aft
 For every case, check:
 
 - Correct chain and receipt status.
-- Exact raw values and deterministic gas fee.
+- Exact raw values, deterministic execution gas fee, and conservative total-fee availability when chain-specific components are missing.
 - No invented labels, names, decimals, or errors.
 - No complete-call-tree claim in Standard mode.
 - Committed and attempted effects remain distinct.

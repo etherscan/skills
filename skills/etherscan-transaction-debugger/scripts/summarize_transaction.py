@@ -16,6 +16,20 @@ APPROVAL = "0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925"
 APPROVAL_FOR_ALL = "0x17307eab39ab6107e8899845ad3d59bd9653f200f220920489ca2b5937696c31"
 TRANSFER_SINGLE = "0xc3d58168c5ae7397731d063d5bbf3d657854427343f4c083240f7aacaa2d0f62"
 TRANSFER_BATCH = "0x4a39dc06d4c0dbc64b70af90fd698a233a518aa5d07e595d983b8c0526c8f7fb"
+CHAIN_FEE_FIELDS = (
+    "l1Fee",
+    "l1GasPrice",
+    "l1GasUsed",
+    "l1FeeScalar",
+    "gasUsedForL1",
+    "daFootprintGasScalar",
+    "l1BaseFeeScalar",
+    "l1BlobBaseFee",
+    "l1BlobBaseFeeScalar",
+    "blobGasUsed",
+    "blobGasPrice",
+)
+ETHEREUM_MAINNET_NAMES = {"1", "0x1", "ethereum", "mainnet", "eth"}
 
 
 def parse_args() -> argparse.Namespace:
@@ -76,6 +90,48 @@ def receipt_succeeded(receipt: dict[str, Any]) -> bool | None:
     if status is None:
         return None
     return status == 1
+
+
+def fee_summary(chain: Any, receipt: dict[str, Any]) -> dict[str, Any]:
+    gas_used = integer(receipt.get("gasUsed"))
+    gas_price = integer(receipt.get("effectiveGasPrice"))
+    execution_fee = (
+        gas_used * gas_price if gas_used is not None and gas_price is not None else None
+    )
+    chain_fields = {name: receipt[name] for name in CHAIN_FEE_FIELDS if name in receipt}
+    l1_fee = integer(receipt.get("l1Fee"))
+    blob_gas_used = integer(receipt.get("blobGasUsed"))
+    blob_gas_price = integer(receipt.get("blobGasPrice"))
+    blob_fee = (
+        blob_gas_used * blob_gas_price
+        if blob_gas_used is not None and blob_gas_price is not None
+        else None
+    )
+
+    total_fee = None
+    total_status = "unavailable"
+    chain_name = str(chain).strip().lower()
+    if execution_fee is not None:
+        if chain_name in ETHEREUM_MAINNET_NAMES:
+            blob_fields_present = "blobGasUsed" in receipt or "blobGasPrice" in receipt
+            if not blob_fields_present or blob_fee is not None:
+                total_fee = execution_fee + (blob_fee or 0)
+                total_status = "complete"
+        elif "l1Fee" in receipt and l1_fee is not None:
+            # OP Stack receipts may expose blob-related diagnostics, but l1Fee is
+            # the charged L1 data fee and already incorporates the active DA mode.
+            # Adding the diagnostic blob fields again would double count it.
+            total_fee = execution_fee + l1_fee
+            total_status = "complete"
+
+    return {
+        "execution_gas_fee_wei": execution_fee,
+        "l1_data_fee_wei": l1_fee,
+        "blob_data_fee_wei": blob_fee,
+        "chain_specific_fee_fields": chain_fields,
+        "total_transaction_fee_wei": total_fee,
+        "total_transaction_fee_status": total_status,
+    }
 
 
 def decode_log(log: dict[str, Any]) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
@@ -171,11 +227,12 @@ def add_address(values: set[str], value: Any) -> None:
 def summarize(bundle: dict[str, Any]) -> dict[str, Any]:
     transaction = bundle.get("transaction") if isinstance(bundle.get("transaction"), dict) else {}
     receipt = bundle.get("receipt") if isinstance(bundle.get("receipt"), dict) else {}
+    block = bundle.get("block") if isinstance(bundle.get("block"), dict) else {}
     internals = bundle.get("internal_transactions") if isinstance(bundle.get("internal_transactions"), list) else []
     success = receipt_succeeded(receipt)
     gas_used = integer(receipt.get("gasUsed"))
     gas_price = integer(receipt.get("effectiveGasPrice"))
-    gas_fee = gas_used * gas_price if gas_used is not None and gas_price is not None else None
+    fees = fee_summary(bundle.get("chain"), receipt)
     value = integer(transaction.get("value")) or 0
 
     native_movements: list[dict[str, Any]] = []
@@ -246,6 +303,10 @@ def summarize(bundle: dict[str, Any]) -> dict[str, Any]:
         )
     if any(item.get("standard") == "ERC-1155 batch" for item in transfers):
         warnings.append("ERC-1155 batch arrays remain raw ABI data and require ABI decoding.")
+    if fees["total_transaction_fee_status"] == "unavailable":
+        warnings.append(
+            "Total transaction fee is unavailable because all applicable chain-specific fee components could not be established; execution_gas_fee_wei remains available when receipt gas fields are present."
+        )
 
     return {
         "schema_version": "1.0",
@@ -256,12 +317,12 @@ def summarize(bundle: dict[str, Any]) -> dict[str, Any]:
         "destination": transaction.get("to"),
         "created_contract": receipt.get("contractAddress"),
         "block_number": integer(receipt.get("blockNumber") or transaction.get("blockNumber")),
-        "block_timestamp": iso_timestamp(transaction.get("blockTimestamp")),
+        "block_timestamp": iso_timestamp(block.get("timestamp") or transaction.get("blockTimestamp")),
         "input_selector": str(transaction.get("input", ""))[:10] if transaction.get("input") else None,
         "raw_native_value_wei": value,
         "gas_used": gas_used,
         "effective_gas_price_wei": gas_price,
-        "gas_fee_wei": gas_fee,
+        **fees,
         "native_movements": native_movements,
         "token_transfer_events": transfers,
         "permission_events": permissions,

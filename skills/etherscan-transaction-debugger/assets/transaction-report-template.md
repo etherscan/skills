@@ -14,7 +14,7 @@
 | Block / time | |
 | Method | |
 | Native value | |
-| Gas used / fee | |
+| Gas used / fees | |
 
 ## What Happened
 

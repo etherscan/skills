@@ -28,7 +28,7 @@ Treat the expected outcome, protocol name, and requested audience as optional. I
 3. Establish facts before interpreting intent: sender, destination, status, block time, top-level value and calldata, gas used, effective gas price, logs, created contract, and returned errors.
 4. Decode the top-level method and important logs with verified ABIs. Resolve proxy and implementation roles before attributing behavior. Read [references/execution-semantics.md](references/execution-semantics.md) for proxies, call types, callbacks, asset movements, and common patterns.
 5. Build only the execution path supported by evidence. Label inferred edges and omitted low-value details. Never call Etherscan internal transactions a complete call trace.
-6. Reconcile native, ERC-20, ERC-721, and ERC-1155 movements; approvals; operator permissions; ownership or role changes; and proxy upgrades. Calculate gas as `gasUsed * effectiveGasPrice` using integers.
+6. Reconcile native, ERC-20, ERC-721, and ERC-1155 movements; approvals; operator permissions; ownership or role changes; and proxy upgrades. Calculate the execution gas fee as `gasUsed * effectiveGasPrice` using integers. Include L1 data or blob fees when the receipt provides them, and report a total transaction fee only when every applicable component is known.
 7. If the transaction failed or contains a suspicious child failure, read [references/failure-analysis.md](references/failure-analysis.md) and identify the narrowest supported root cause.
 8. Cross-check the narrative against the receipt status, logs, values, addresses, and trace. Read [references/reporting.md](references/reporting.md) before producing security, support, comparison, or low-confidence reports.
 9. Create an Etherscan evidence trail: link the transaction and each important address, contract, implementation, token, and relevant explorer view on the correct Etherscan-family explorer.
@@ -92,7 +92,7 @@ Do not generate exploit code, sign or broadcast transactions, or make definitive
 
 Lead with a one- or two-sentence verdict, then include only sections relevant to the request:
 
-1. **Transaction summary** — chain, hash, sender, destination, status, block/time, decoded method, value, gas used, and fee.
+1. **Transaction summary** — chain, hash, sender, destination, status, block/time, decoded method, value, gas used, execution fee, chain-specific fee components, and total fee only when complete.
 2. **What happened** — chronological explanation of the important execution stages.
 3. **Execution flow** — compact tree or numbered path, with call type and result when proven.
 4. **Asset and permission changes** — gross movements, net changes for important actors, gas, approvals, roles, ownership, or upgrades.
@@ -108,7 +108,7 @@ For comparisons, align both transactions by chain, sender, destination or implem
 ## Bundled Resources
 
 - `scripts/collect_transaction_data.py`: collect a reproducible Standard-mode JSON bundle through the Etherscan CLI and optionally fetch contract metadata.
-- `scripts/summarize_transaction.py`: derive exact status, gas fee, native movements, common token transfers, address inventory, and evidence warnings from a bundle.
+- `scripts/summarize_transaction.py`: derive exact status, execution and chain-specific fees, native movements, common token transfers, address inventory, and evidence warnings from a bundle.
 - [references/evidence-collection.md](references/evidence-collection.md): collection commands, fallback rules, chain resolution, and trace requirements.
 - [references/execution-semantics.md](references/execution-semantics.md): call semantics, proxy attribution, token and permission events, and transaction patterns.
 - [references/failure-analysis.md](references/failure-analysis.md): revert decoding and root-cause workflow.
