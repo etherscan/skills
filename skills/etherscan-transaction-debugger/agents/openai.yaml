@@ -1,0 +1,4 @@
+interface:
+  display_name: "Etherscan Transaction Debugger"
+  short_description: "Explain EVM transactions with Etherscan evidence"
+  default_prompt: "Use $etherscan-transaction-debugger to explain this transaction with live Etherscan evidence and verification links."
