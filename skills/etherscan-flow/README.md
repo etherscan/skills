@@ -33,7 +33,7 @@ flowchart LR
 
 Common supported chains: **Ethereum** (default), BNB Chain, Polygon, Arbitrum, Optimism, Base, and Avalanche. Other named EVM chains are accepted only after a live V2 support check.
 
-The skill ships as a lean `SKILL.md` (hard rules, routing, credential order) plus `references/*.md` files the agent reads on demand per step (progressive disclosure — keeps context small so any skills-capable model handles it well). Install the whole folder; `SKILL.md` alone is not the complete skill.
+The skill ships as a lean `SKILL.md` (hard rules, routing, credential order) plus `references/*.md` files the agent reads on demand per step (progressive disclosure — keeps context small so any skills-capable model handles it well). A deterministic helper sorts flows chronologically, orders receipt-log movements sharing a transaction by `logIndex`, and arranges nodes left-to-right by hop, then top-to-bottom by first-flow sequence. It records the derivation in `_meta.layout`. Install the whole folder; `SKILL.md` alone is not the complete skill.
 
 ## Performance model
 
@@ -43,7 +43,7 @@ Rate control is key-aware. The skill does not assume a fixed requests-per-second
 
 ## Installation
 
-Install the complete `skills/etherscan-flow/` directory. Required workflow detail lives in `references/`, the deterministic amount helper lives in `scripts/`, and `schema/` plus `examples/` support validation. Copying `SKILL.md` alone is incomplete.
+Install the complete `skills/etherscan-flow/` directory. Required workflow detail lives in `references/`, deterministic amount and graph-ordering helpers live in `scripts/`, and `schema/` plus `examples/` support validation. Copying `SKILL.md` alone is incomplete.
 
 ### Skills CLI
 
@@ -207,13 +207,13 @@ If you hit a false positive on Claude: report it via `/feedback`, and if you do 
   "id": "case-a1b2c3d4",
   "name": "0xabcd… — approval drain traced to Binance 14",
   "schemaVersion": 1,
-  "nodes": [ { "id": "victim01", "address": "0x…", "chainid": 1, "role": "victim_wallet", "hop": 0, "label": "Victim", "subLabel": null, "balance": null, "notes": "…" } ],
-  "edges": [ { "id": "e1", "source": "victim01", "target": "atk01", "amount": "5000", "token": "USDT", "type": "token_transfer", "txcount": 1, "txhash": "0x…", "txhashes": ["0x…"], "chainid": 1, "timestamp": "2024-03-15T10:23:00Z" } ],
-  "_meta": { "chain": "ethereum", "chainid": 1, "chains": [{ "chain": "ethereum", "chainid": 1 }], "financials": {}, "analysis": null, "performance": {}, "patterns": [], "gaps": [], "disclaimer": "…" }
+  "nodes": [ { "id": "victim01", "address": "0x…", "chainid": 1, "role": "victim_wallet", "hop": 0, "label": "Victim", "subLabel": null, "balance": null, "notes": "…", "x": 0, "y": 0 } ],
+  "edges": [ { "id": "e1", "source": "victim01", "target": "atk01", "amount": "5000", "token": "USDT", "type": "token_transfer", "txcount": 1, "txhash": "0x…", "txhashes": ["0x…"], "chainid": 1, "block": 19420000, "transaction_index": 12, "log_index": 4, "timestamp": "2024-03-15T10:23:00Z" } ],
+  "_meta": { "chain": "ethereum", "chainid": 1, "chains": [{ "chain": "ethereum", "chainid": 1 }], "financials": {}, "analysis": null, "performance": {}, "layout": { "algorithm": "chronological_hops_v1", "direction": "left_to_right_top_to_bottom", "edge_order": "timestamp", "same_transaction_order": "transaction_edge_then_log_index_then_trace_id", "node_order": "hop_then_first_edge", "x_spacing": 360, "y_spacing": 180 }, "patterns": [], "gaps": [], "disclaimer": "…" }
 }
 ```
 
-Every node and edge carries a `chainid`. `hop` counts transfers from the seed, so seed and scope addresses are `hop: 0`. Repeated movements between the same pair collapse into one edge: `txcount` is how many transactions it merges, `txhash` is the earliest, and `txhashes` lists all of them so the canvas can validate each one on-chain. Anything the API did not resolve — a balance that was never needed, an unknown token symbol — is `null` rather than a guess. Financial totals live under `_meta.financials`; structured forensic conclusions live under `_meta.analysis` (`null` for ordinary cases). There are no top-level `financials` or `analysis` keys.
+Every node and edge carries a `chainid`. `hop` counts transfers from the seed, so seed and scope addresses are `hop: 0`. Final edges are chronological by timestamp or block; receipt-log edges sharing one txhash are ordered by `log_index`; node coordinates place hop columns left-to-right with same-hop branches top-to-bottom by first-flow sequence. `_meta.layout` records the ordering and spacing that produced those coordinates. Repeated movements between the same pair collapse into one edge: `txcount` is how many transactions it merges, `txhash` is the earliest, and `txhashes` lists all of them so the canvas can validate each one on-chain. Anything the API did not resolve — a balance that was never needed, an unknown token symbol — is `null` rather than a guess. Financial totals live under `_meta.financials`; structured forensic conclusions live under `_meta.analysis` (`null` for ordinary cases). There are no top-level `financials` or `analysis` keys.
 
 When a user edits Case Findings in Etherscan Flow, the canvas preserves the structured analysis and stores the displayed Markdown at `_meta.ui.findings_markdown`. The tracer itself does not emit this reserved UI field. Saved and exported layouts may also carry non-zero numeric `x` and `y` coordinates.
 
