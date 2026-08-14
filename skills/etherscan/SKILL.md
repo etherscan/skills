@@ -42,7 +42,7 @@ Use non-mutating checks to identify the task-relevant Etherscan interfaces avail
 
 Ask only for information that is required and genuinely missing.
 
-- Confirm the exact chain and chain ID; one API V2 key spans many chains, so an implicit chain can produce a valid result for the wrong network.
+- Confirm the exact chain and chain ID; one API key spans many chains, so an implicit chain can produce a valid result for the wrong network.
 - Identify the address, transaction, token, contract, or block in scope. Distinguish target types when the live capability documents different behavior for them.
 - Distinguish read-only inspection from verification, broadcast, configuration deletion, or another external write.
 - Confirm API-plan access when the selected endpoint or tool is gated. Prefer an available free-tier route when the plan is unknown, or state that access may be restricted.

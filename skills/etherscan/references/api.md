@@ -31,7 +31,7 @@ Prefer the exact endpoint page when a general resource and endpoint-specific doc
 
 ## Durable constraints
 
-Use the API V2 request envelope unless the exact live authority documents a different service or route:
+Use the API request envelope unless the exact live authority documents a different service or route:
 
 ```text
 https://api.etherscan.io/v2/api?chainid={chainid}&module={module}&action={action}&{endpoint_parameters}&apikey=YourApiKeyToken
