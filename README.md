@@ -24,6 +24,7 @@
 | Skill | Install | Description |
 | ----- | ------- | ----------- |
 | [etherscan](./skills/etherscan/SKILL.md) | `npx skills add etherscan/skills --skill etherscan` | Navigate Etherscan website features, API endpoints, CLI commands, and MCP tools, selecting the right interface and verifying current behavior from live official sources. |
+| [etherscan-contract-review](./skills/etherscan-contract-review/SKILL.md) | `npx skills add etherscan/skills --skill etherscan-contract-review` | Review and explain verified deployed EVM contracts, including architecture, user and admin flows, proxy roles, asset movement, privileged controls, and evidence-backed uncertainty. |
 | [etherscan-flow](./skills/etherscan-flow/SKILL.md) | `npx skills add etherscan/skills --skill etherscan-flow` | Trace on-chain money flow via the Etherscan API V2 and write a single Etherscan Flow Case JSON file (nodes + edges). Two modes — strict trace for tx/address investigation, and business/entity profile for income, spending, and treasury questions. Security cases reconstruct an evidence-backed incident mechanism, confidence, and losses. |
 | [etherscan-transaction-debugger](./skills/etherscan-transaction-debugger/SKILL.md) | `npx skills add etherscan/skills --skill etherscan-transaction-debugger` | Analyze and explain one or two EVM transactions from live Etherscan data, with human-verifiable evidence links. Reconstructs the supported execution path, decodes calls and events, summarizes asset and permission changes, and explains failures — with confidence ratings and stated limitations. |
 
@@ -41,6 +42,7 @@ Or install a single skill:
 
 ```bash
 npx skills add etherscan/skills --skill etherscan
+npx skills add etherscan/skills --skill etherscan-contract-review
 npx skills add etherscan/skills --skill etherscan-flow
 npx skills add etherscan/skills --skill etherscan-transaction-debugger
 ```
@@ -57,6 +59,9 @@ git clone https://github.com/etherscan/skills.git etherscan-skills
 # Install etherscan only
 cp -r etherscan-skills/skills/etherscan ~/.claude/skills/
 
+# Install etherscan-contract-review only
+cp -r etherscan-skills/skills/etherscan-contract-review ~/.claude/skills/
+
 # Install etherscan-flow only
 cp -r etherscan-skills/skills/etherscan-flow ~/.claude/skills/
 
@@ -64,7 +69,7 @@ cp -r etherscan-skills/skills/etherscan-flow ~/.claude/skills/
 cp -r etherscan-skills/skills/etherscan-transaction-debugger ~/.claude/skills/
 
 # Install all skills
-cp -r etherscan-skills/skills/etherscan etherscan-skills/skills/etherscan-flow etherscan-skills/skills/etherscan-transaction-debugger ~/.claude/skills/
+cp -r etherscan-skills/skills/etherscan-contract-review etherscan-skills/skills/etherscan etherscan-skills/skills/etherscan-flow etherscan-skills/skills/etherscan-transaction-debugger ~/.claude/skills/
 ```
 
 **Or download the ZIP** from the green *Code* button on GitHub, unzip it, and copy any or all folders under `skills/` into your skills directory. Copy each complete skill folder so that its `SKILL.md` remains at the folder root.

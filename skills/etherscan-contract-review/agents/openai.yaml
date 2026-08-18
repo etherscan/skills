@@ -1,0 +1,4 @@
+interface:
+  display_name: "Etherscan Contract Review"
+  short_description: "Explain verified smart contracts"
+  default_prompt: "Use $etherscan-contract-review to explain what this deployed smart contract does, including flows, permissions, and source references."
