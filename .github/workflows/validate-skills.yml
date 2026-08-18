@@ -50,10 +50,14 @@ jobs:
               exit 1
             fi
             printf '%s\n' "$output"
-            if ! grep -Fq "Found 1 skill" <<< "$output"; then
+            # Strip ANSI escape codes so the assertion does not depend on the
+            # CLI honoring NO_COLOR (belt-and-suspenders with the env var above).
+            clean="$(printf '%s\n' "$output" | sed $'s/\x1b\\[[0-9;]*m//g')"
+            if ! match="$(grep -F "Found 1 skill" <<< "$clean")"; then
               echo "ERROR: Expected exactly one discovered skill in $skill_dir"
               exit 1
             fi
+            echo "OK ($skill_dir): $match"
           done
 
   etherscan-flow:
