@@ -38,13 +38,26 @@ jobs:
 
       - name: Smoke-test Skills CLI discovery
         shell: bash
+        env:
+          NO_COLOR: "1"
         run: |
           mapfile -t skill_dirs < <(find skills -mindepth 1 -maxdepth 1 -type d -print | sort)
           test "${#skill_dirs[@]}" -gt 0
           for skill_dir in "${skill_dirs[@]}"; do
-            output="$(npx --yes skills@1.5.22 add "./$skill_dir" --list 2>&1)"
+            if ! output="$(npx --yes skills@1.5.22 add "./$skill_dir" --list 2>&1)"; then
+              printf '%s\n' "$output"
+              echo "ERROR: Skills CLI failed for $skill_dir"
+              exit 1
+            fi
             printf '%s\n' "$output"
-            grep -F "Found 1 skill" <<< "$output"
+            # Strip ANSI escape codes so the assertion does not depend on the
+            # CLI honoring NO_COLOR (belt-and-suspenders with the env var above).
+            clean="$(printf '%s\n' "$output" | sed $'s/\x1b\\[[0-9;]*m//g')"
+            if ! match="$(grep -F "Found 1 skill" <<< "$clean")"; then
+              echo "ERROR: Expected exactly one discovered skill in $skill_dir"
+              exit 1
+            fi
+            echo "OK ($skill_dir): $match"
           done
 
   etherscan-flow:
