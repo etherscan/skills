@@ -47,6 +47,7 @@ Before writing any JSON, check every node and edge against these rules. Fix or d
 | ENS/name stored separately | ENS names, exchange display names, project aliases, or second-line labels are in `label`/`subLabel`, never `address` | Move display text to `label` or `subLabel`; keep only the verified 0x address in `address` |
 | No duplicate movements | Deduplicate only when the exact same API movement was fetched through more than one query. A tx hash identifies a transaction, not every movement inside it: use `(chainid, txhash)` for a top-level normal tx, `(chainid, txhash, logIndex)` for event-log/token movements, and `(chainid, txhash, traceId)` for internal movements. If an endpoint provides no stable movement index, compare the complete normalized source row rather than dropping same-tx movements. | Remove exact source duplicates, then perform Step 5 edge merging |
 | Merged edges are consistent | If an edge merges several txs (`txcount` > 1), its `txhash` is the earliest tx in the group, `amount` is the summed decimal total, and `edge.txhashes` lists every distinct merged hash (earliest first, so `txhashes[0] === txhash`) | Recompute, or split the edge |
+| Flows are chronological and laid out | Final edges follow Hard rule 10b chronology; same-tx receipt-log edges increase by `log_index`; available block/index fields are normalized; node columns increase left-to-right by `hop`; nodes within a hop increase top-to-bottom by first-flow chronology; `_meta.layout` records the derivation | Run `python scripts/order_case.py <case-file>` after merging and before validation; if Python is unavailable, reproduce its ordering and metadata exactly |
 | Token symbol resolved | If symbol is unknown after tokentx lookup, write `null` not an empty string or guess | Use `null` |
 | Token identified by address | Every ERC-20 edge **must** carry `token_address` = the emitting contract's `contractAddress` (the token's true identity; symbols can be spoofed *or shared* — two vaults can both report `LVUSDC`). The on-chain validator binds by `token_address` when present and otherwise falls back to a symbol match that fails on any collision, so a missing `token_address` silently breaks validation for mint/burn and vault-share edges. Keep `token` the bare symbol (Hard rule 22) — never a compound label like `"LVUSDC (LowerRisk)"`. Native-coin edges omit `token_address` | Backfill from the `tokentx` row / `Transfer` log `address`; move any parenthetical qualifier out of `token` into the node `label`/`subLabel` |
 | Hops 0-indexed | Every seed/scope address is `hop: 0`; no node exceeds the run's depth | Recompute `hop` from distance to the nearest seed |
@@ -75,7 +76,7 @@ Save `case-{SHORT_ID}-flow.json` using the **Etherscan Flow Case** schema. This 
 - `SHORT_ID` — see Hard rule 7 for the exact derivation (seed tx hash, else seed address, else the lexicographically smallest scope address). Never derive it from free-form user text.
 - Directory: the platform's temp/scratchpad directory if one exists, otherwise `./cases/`. The user cannot override the path.
 
-Node `id` values must be short unique alphanumeric strings (2–12 chars, e.g. `subj01`, `atk01`, `cex01`). Edge `id` values follow the same convention (e.g. `e_atk_cex`). Tracer output sets `x` and `y` to `0`; Etherscan Flow may later persist user-edited numeric coordinates when the case is saved or exported. Every node and edge must include `chainid`; for single-chain cases this equals `_meta.chainid`, and for future multi-chain cases it preserves the chain context for each address and tx hash.
+Node `id` values must be short unique alphanumeric strings (2–12 chars, e.g. `subj01`, `atk01`, `cex01`). Edge `id` values follow the same convention (e.g. `e_atk_cex`). Tracer output assigns deterministic numeric `x` and `y` coordinates using *Graph ordering and layout* below; Etherscan Flow may later persist user-edited coordinates when the case is saved or exported. Every node and edge must include `chainid`; for single-chain cases this equals `_meta.chainid`, and for future multi-chain cases it preserves the chain context for each address and tx hash.
 
 ### Field conventions
 
@@ -85,6 +86,7 @@ Node `id` values must be short unique alphanumeric strings (2–12 chars, e.g. `
 - **`_meta.chains`** lists every chain that contributed a node or edge to this case, as `{ "chain": name, "chainid": int }` objects. For a single-chain case it holds exactly one entry, matching `_meta.chain` / `_meta.chainid`. It exists so a consumer can read the case's chain scope without walking every node.
 - **`_meta.financials`** is where all financial totals live (Step 3B). There is no top-level `financials` key; the top level is exactly `id`, `name`, `schemaVersion`, `nodes`, `edges`, `_meta`.
 - **`_meta.analysis`** is `null` for ordinary cases and a required structured forensic conclusion for security cases. `_meta.patterns` remains a compact index of detected patterns; it never replaces the evidence, confidence, competing hypotheses, and limitations in `_meta.analysis`.
+- **`_meta.layout`** is emitted by the tracer's final ordering pass. It records the chronology strategy, same-transaction ordering, node ordering, direction, and coordinate spacing that produced the non-zero layout; it is separate from user-edited canvas state.
 - **`_meta.ui` is reserved for Etherscan Flow.** The tracer does not emit it. After a user edits Case Findings, Etherscan Flow stores the displayed Markdown at `_meta.ui.findings_markdown` while preserving `_meta.analysis`. This user-authored Markdown may contain newlines and exceed the tracer's 200-character field limit; the schema caps `findings_markdown` at 1,048,576 Unicode characters (not bytes), while the whole-document byte size is a separate limit the application enforces. Older root `findings`, `_meta.findings_markdown`, and structured `_meta.ui.findings` are migration inputs, not new tracer output fields; a structured `_meta.ui.findings` is still fully sanitized (HTML tags/control chars stripped, each string ≤ 200 chars) — only `findings_markdown` is exempt.
 
 ### Edge merging
@@ -96,10 +98,26 @@ Repeated movements between the same pair collapse into one edge. First remove on
 - `txhashes` = **every** distinct merged hash — including the earliest — once each, in ascending block order, so `txhashes[0] === txhash`. Each entry is a real hash from this run (Hard rule 10 applies to all of them). Cap at 100 hashes per edge; if the group is larger, keep the earliest 100, keep the true `txcount`, and add `edge_txhashes_truncated` to `_meta.gaps`.
 - `amount` = sum the raw smallest-unit integers across all deduplicated movement rows, then format once with *Lossless amount arithmetic*. Do not sum formatted decimal values.
 - `timestamp` = the earliest tx's timestamp.
+- `block` = the earliest tx's integer block number when available.
+- `transaction_index` = that transaction's normalized position within its block when available.
+- `log_index` = the earliest contributing receipt log's normalized event position when this edge came from logs.
+- `trace_id` = the earliest contributing internal row's hierarchical trace identifier when this edge came from internal transactions.
 
 Single-tx edges (`txcount` = 1) may omit `txhashes` or write it as the one-element `[txhash]`. The legacy `_meta.edge_txhashes` map is superseded by `edge.txhashes` — do not emit it.
 
 Two rows that differ in `token` or `type` never merge, even within one transaction — that is what keeps both legs of a swap.
+
+### Graph ordering and layout
+
+After edge merging, run `python scripts/order_case.py <case-file>` before schema validation. The helper applies one deterministic policy:
+
+1. If every edge has a valid timestamp, sort `edges` by timestamp ascending. This is the normal display order and ensures Flow #2 cannot occur after Flow #3.
+2. Otherwise, for a single-chain case where every edge has a block, sort by integer block ascending.
+3. For incomplete or multi-chain chronology, place timestamped edges first, then block-only edges, then unresolved edges. Never invent a timestamp or block to force an order.
+4. Within the same block, sort transactions by `transaction_index` and then txhash. Within one txhash, put a transaction-level edge first, order receipt-log edges by integer `log_index`, and order internal rows hierarchically by numeric `trace_id` components (`0_2` before `0_10`). Logs and internal rows are separate evidence sources, so their cross-source grouping is deterministic display order, not a claim about exact EVM execution interleaving. Use edge id as the final stable tie-breaker.
+5. Sort nodes into columns by `hop`. Set `x = hop × 360`. Within each hop, order nodes by the first chronological edge that touches them and set `y = row × 180`. Break ties by node id. This makes the graph read left-to-right and then top-to-bottom while preserving the on-chain edge direction.
+
+The helper normalizes hex or decimal `edge.block`, `edge.transaction_index`, and `edge.log_index` values to JSON integers. It writes `_meta.layout` with the chronology strategy, same-transaction policy, node policy, direction, and spacing used to derive the coordinates. It updates the case in place unless `--output` is supplied. If Python is unavailable, reproduce these steps and the metadata exactly. `_meta.ui` remains reserved for the canvas.
 
 **Valid `role` values for nodes:**
 `wallet` `erc20_token` `nft_contract` `defi_pool` `multisig` `staking_contract` `lending_protocol` `dao_contract` `attacker_eoa` `scam_contract` `victim_wallet` `intermediate_wallet` `cex_deposit` `dex_router` `mixer_contract` `bridge` `nft_drainer_contract` `sweeper_bot` `unknown_eoa` `unknown_contract`
@@ -138,7 +156,7 @@ Two rows that differ in `token` or `type` never merge, even within one transacti
       "hop": 1,
       "balance": null,
       "notes": "Created 3 days before drain",
-      "x": 0,
+      "x": 360,
       "y": 0
     }
   ],
@@ -155,19 +173,20 @@ Two rows that differ in `token` or `type` never merge, even within one transacti
       "txhash": "0x...",
       "txhashes": ["0x..."],
       "chainid": 1,
+      "block": 19420000,
       "timestamp": "2024-03-15T10:23:00Z"
     }
   ]
 }
 ```
 
-Every edge object must include the `txhash` and `chainid` fields exactly as shown above. If the API row used `hash` or `transactionHash`, rename/copy it to `txhash` in the output edge. Set `edge.chainid` to the `{CHAINID}` used for the API call that returned that tx hash. Merged edges (`txcount` > 1) must also carry `txhashes` with every merged hash (see *Edge merging*); the canvas shows the full list and its on-chain validator checks each one.
+Every edge object must include the `txhash` and `chainid` fields exactly as shown above. If the API row used `hash` or `transactionHash`, rename/copy it to `txhash` in the output edge. Set `edge.chainid` to the `{CHAINID}` used for the API call that returned that tx hash, and copy the earliest source row's integer block number to `edge.block` when available. Merged edges (`txcount` > 1) must also carry `txhashes` with every merged hash (see *Edge merging*); the canvas shows the full list and its on-chain validator checks each one.
 
 For any ERC-20 movement, also set `edge.token_address` to the emitting token's **contract address** — the `contractAddress` field of the `tokentx` row (or the `Transfer` log's `address`). A symbol alone is not an identity: anyone can deploy a look-alike contract with the same `token` symbol, so the on-chain validator treats a symbol-only edge as ambiguous when two same-symbol contracts moved between the endpoints. Emitting `token_address` binds the amount to one contract and lets it verify. Use `null`/omit for native-coin edges (ETH, BNB, POL…), where `token` is the gas coin and value lives in `tx.value`.
 
 `balance` and `amount` are **exact bare decimal strings** with no unit suffix, exponent, or raw wei — `"12.5"`, never `"12.5 ETH"`, `"1.25e1"`, or `"12500000000000000000"`. Preserve arbitrarily small positive values (for example, `"0.000000000000092695"`) and use `null`, not `"0"`, when unresolved. The unit is the chain's native coin for `balance`, and the edge's `token` for `amount`.
 
-> **AI soft layer**: `label`, `subLabel`, `role`, and `notes` on each node are LLM-assigned from API evidence. All `address`, `chainid`, `txhash`, `amount`, `token`, `timestamp` fields are API-sourced or run-parameter sourced only — never fabricated. `subLabel` is optional and is the right place for an ENS name, alias, or second-line display name; it must never replace `address`.
+> **AI soft layer**: `label`, `subLabel`, `role`, and `notes` on each node are LLM-assigned from API evidence. All `address`, `chainid`, `txhash`, `amount`, `token`, `block`, and `timestamp` fields are API-sourced or run-parameter sourced only — never fabricated. `subLabel` is optional and is the right place for an ENS name, alias, or second-line display name; it must never replace `address`.
 
 Also append a `_meta` block after the nodes/edges:
 

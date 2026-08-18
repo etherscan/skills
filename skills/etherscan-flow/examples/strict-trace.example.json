@@ -26,7 +26,7 @@
       "hop": 1,
       "balance": null,
       "notes": "SYNTHETIC. Called transferFrom to pull the victim's USDT, then forwarded to a CEX deposit.",
-      "x": 0,
+      "x": 360,
       "y": 0
     },
     {
@@ -39,7 +39,7 @@
       "hop": 2,
       "balance": null,
       "notes": "SYNTHETIC. Branch stops here — funds reached an exchange.",
-      "x": 0,
+      "x": 720,
       "y": 0
     }
   ],
@@ -56,6 +56,9 @@
       "txhash": "0xaaaa000000000000000000000000000000000000000000000000000000000001",
       "txhashes": ["0xaaaa000000000000000000000000000000000000000000000000000000000001"],
       "chainid": 1,
+      "block": 1,
+      "transaction_index": 0,
+      "log_index": 0,
       "timestamp": "2026-03-15T10:23:00Z"
     },
     {
@@ -73,6 +76,9 @@
         "0xcccc000000000000000000000000000000000000000000000000000000000003"
       ],
       "chainid": 1,
+      "block": 2,
+      "transaction_index": 1,
+      "log_index": 0,
       "timestamp": "2026-03-15T10:41:00Z"
     }
   ],
@@ -180,6 +186,15 @@
         "validation": 0
       },
       "soft_budget_overrun_reason": null
+    },
+    "layout": {
+      "algorithm": "chronological_hops_v1",
+      "direction": "left_to_right_top_to_bottom",
+      "edge_order": "timestamp",
+      "same_transaction_order": "transaction_edge_then_log_index_then_trace_id",
+      "node_order": "hop_then_first_edge",
+      "x_spacing": 360,
+      "y_spacing": 180
     },
     "timeline": [],
     "patterns": [

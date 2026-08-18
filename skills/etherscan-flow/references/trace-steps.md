@@ -346,4 +346,6 @@ Prefer the `timeStamp` field already present on `txlist` / `tokentx` / `txlistin
 
 If that call is unavailable, do **not** assume 12-second blocks — that is Ethereum-only, and blocks are sub-second on several supported chains. Derive the chain's actual block time from two rows you already hold: `(t2 − t1) / (block2 − block1)`, then estimate `seed_timestamp + block_delta × that value`. Mark any estimated timestamp with `timestamp_estimated` in `_meta.gaps`. If you hold fewer than two rows, write `null` rather than a guess (Data integrity rule).
 
+Keep `blockNumber`, `transactionIndex`, receipt `logIndex`, and internal-row `traceId` with every movement through edge merging. Normalize the first three to non-negative integers in the final edge fields `block`, `transaction_index`, and `log_index`; preserve `traceId` as `trace_id`. A merged edge inherits these fields from its earliest contributing movement. Immediately before Step 4B validation, run `python scripts/order_case.py <case-file>` to sort final edges chronologically, order same-transaction event logs, assign the deterministic left-to-right/top-to-bottom node layout required by Hard rule 10b, and record its derivation in `_meta.layout`. This ordering step is local and spends no API calls.
+
 ---

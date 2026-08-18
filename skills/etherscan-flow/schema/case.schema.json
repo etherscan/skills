@@ -168,11 +168,11 @@
         "notes": { "$ref": "#/$defs/safeStringOrNull" },
         "x": {
           "type": "number",
-          "description": "Canvas x-coordinate. Tracer output starts at 0; Etherscan Flow may persist a user-edited layout."
+          "description": "Canvas x-coordinate. Tracer output uses hop * 360 for a left-to-right layout; Etherscan Flow may persist a user-edited layout."
         },
         "y": {
           "type": "number",
-          "description": "Canvas y-coordinate. Tracer output starts at 0; Etherscan Flow may persist a user-edited layout."
+          "description": "Canvas y-coordinate. Tracer output orders nodes within a hop by first-flow chronology at 180-unit intervals; Etherscan Flow may persist a user-edited layout."
         }
       }
     },
@@ -203,6 +203,27 @@
           "description": "Every merged hash, ascending block order, txhashes[0] === txhash."
         },
         "chainid": { "type": "integer", "minimum": 1 },
+        "block": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "description": "Earliest transaction block for this edge, normalized to an integer; null or absent only when unresolved."
+        },
+        "transaction_index": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "description": "Transaction position within the block, normalized from transactionIndex; used before same-transaction movement ordering."
+        },
+        "log_index": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "description": "Receipt event position, normalized from logIndex. Edges from logs sharing a txhash are ordered by this field."
+        },
+        "trace_id": {
+          "type": ["string", "null"],
+          "pattern": "^[0-9]+(?:_[0-9]+)*$",
+          "maxLength": 200,
+          "description": "Hierarchical traceId for internal-transaction rows. It orders internal rows within their own source."
+        },
         "timestamp": {
           "allOf": [{ "$ref": "#/$defs/safeStringOrNull" }],
           "description": "ISO 8601, or null when unresolved."
@@ -320,6 +341,26 @@
         }
       }
     },
+    "layout": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "algorithm", "direction", "edge_order", "same_transaction_order",
+        "node_order", "x_spacing", "y_spacing"
+      ],
+      "properties": {
+        "algorithm": { "type": "string", "const": "chronological_hops_v1" },
+        "direction": { "type": "string", "const": "left_to_right_top_to_bottom" },
+        "edge_order": { "type": "string", "enum": ["timestamp", "block", "mixed"] },
+        "same_transaction_order": {
+          "type": "string",
+          "const": "transaction_edge_then_log_index_then_trace_id"
+        },
+        "node_order": { "type": "string", "const": "hop_then_first_edge" },
+        "x_spacing": { "type": "integer", "const": 360 },
+        "y_spacing": { "type": "integer", "const": 180 }
+      }
+    },
     "meta": {
       "type": "object",
       "additionalProperties": false,
@@ -383,6 +424,7 @@
             { "type": "null" }
           ]
         },
+        "layout": { "$ref": "#/$defs/layout" },
         "ui": { "$ref": "#/$defs/ui" },
         "timeline": { "$ref": "#/$defs/safeArray" },
         "patterns": { "type": "array", "items": { "$ref": "#/$defs/pattern" } },
