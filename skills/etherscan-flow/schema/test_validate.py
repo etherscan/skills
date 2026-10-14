@@ -56,6 +56,17 @@ class CaseValidationTests(unittest.TestCase):
         nonzero["nodes"][0]["y"] = 80
         self.assertEqual([], self.schema_errors(nonzero))
 
+    def test_canvas_pin_is_accepted_only_as_true(self):
+        pinned = self.case()
+        pinned["nodes"][0]["pinned"] = True
+        self.assertEqual([], self.schema_errors(pinned))
+
+        for bad in (False, "true", 1):
+            with self.subTest(pinned=bad):
+                case = self.case()
+                case["nodes"][0]["pinned"] = bad
+                self.assertTrue(self.schema_errors(case))
+
     def test_tiny_plain_decimal_string_is_accepted(self):
         case = self.case()
         case["edges"][0]["amount"] = "0.000000000000092695"
