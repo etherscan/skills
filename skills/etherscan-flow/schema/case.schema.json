@@ -173,6 +173,10 @@
         "y": {
           "type": "number",
           "description": "Canvas y-coordinate. Tracer output orders nodes within a hop by first-flow chronology at 180-unit intervals; Etherscan Flow may persist a user-edited layout."
+        },
+        "pinned": {
+          "const": true,
+          "description": "Reserved for Etherscan Flow; the tracer never emits it. Set when a user pins the card so it keeps its x/y through dragging and Tidy Up. Absent means unpinned; the canvas deletes the field on unpin rather than writing false."
         }
       }
     },
