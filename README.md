@@ -30,6 +30,24 @@
 
 ## Installation
 
+### As a Claude Code or Codex plugin
+
+The plugin installs all four skills and updates them with this repo. It contains no MCP server: the skills use the [Etherscan CLI](https://docs.etherscan.io/ai/cli.md) first, and use an Etherscan MCP connection only if you have already added one.
+
+In Claude Code:
+
+```text
+/plugin marketplace add etherscan/skills
+/plugin install etherscan@etherscan
+```
+
+In Codex:
+
+```bash
+codex plugin marketplace add etherscan/skills
+codex plugin add etherscan@etherscan
+```
+
 ### With the Skills CLI
 
 Install every skill in this repo:

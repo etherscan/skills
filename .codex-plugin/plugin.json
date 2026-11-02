@@ -1,0 +1,42 @@
+{
+  "name": "etherscan",
+  "version": "0.1.0",
+  "description": "Debug EVM transactions, review verified contracts, trace on-chain money flow, and pick the right Etherscan page, API endpoint, CLI command, or MCP tool.",
+  "author": {
+    "name": "Etherscan",
+    "url": "https://etherscan.io"
+  },
+  "homepage": "https://github.com/etherscan/skills",
+  "repository": "https://github.com/etherscan/skills",
+  "license": "MIT",
+  "keywords": [
+    "etherscan",
+    "ethereum",
+    "evm",
+    "blockchain",
+    "transactions",
+    "smart-contracts"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Etherscan",
+    "shortDescription": "Debug transactions and review contracts with Etherscan.",
+    "longDescription": "Etherscan skills that explain EVM transactions, review verified contracts, trace on-chain money flow, and route a task to the right Etherscan website page, API endpoint, CLI command, or MCP tool. They use the Etherscan CLI first.",
+    "developerName": "Etherscan",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Read"
+    ],
+    "websiteURL": "https://etherscan.io",
+    "privacyPolicyURL": "https://etherscan.io/privacypolicy",
+    "termsOfServiceURL": "https://etherscan.io/terms",
+    "defaultPrompt": [
+      "Explain what happened in this transaction with Etherscan.",
+      "Review this verified contract on Etherscan.",
+      "Trace where the funds from this address went."
+    ],
+    "brandColor": "#0784C3",
+    "composerIcon": "./assets/icon.png",
+    "logo": "./assets/icon.png"
+  }
+}

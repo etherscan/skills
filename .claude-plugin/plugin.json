@@ -1,0 +1,18 @@
+{
+  "name": "etherscan",
+  "displayName": "Etherscan",
+  "description": "Debug EVM transactions, review verified contracts, trace on-chain money flow, and pick the right Etherscan page, API endpoint, CLI command, or MCP tool. Uses the Etherscan CLI first.",
+  "author": {
+    "name": "Etherscan",
+    "url": "https://etherscan.io"
+  },
+  "homepage": "https://github.com/etherscan/skills",
+  "repository": "https://github.com/etherscan/skills",
+  "license": "MIT",
+  "keywords": ["etherscan", "ethereum", "evm", "blockchain", "transactions", "smart-contracts"],
+  "icon": "./assets/icon.png",
+  "documentationUrl": "https://docs.etherscan.io",
+  "supportUrl": "https://etherscan.io/contactus",
+  "privacyPolicyUrl": "https://etherscan.io/privacypolicy",
+  "termsOfServiceUrl": "https://etherscan.io/terms"
+}

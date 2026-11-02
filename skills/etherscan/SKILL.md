@@ -64,7 +64,8 @@ When the user does not specify an interface, apply these defaults.
 - Prefer the website for an interactive human workflow.
 - Prefer the API for an application integration or when the broadest endpoint coverage is required.
 - Prefer the CLI for terminal automation, pipelines, or exports.
-- Prefer MCP for agent-driven, read-only tool calls when an authenticated MCP connection is available.
+- Prefer the CLI for agent-driven, read-only lookups when the agent can run shell commands and the CLI is installed, even when an MCP connection is also available.
+- Prefer MCP when the agent cannot run shell commands, or the CLI is unavailable and an MCP connection is.
 
 ## Respect capability boundaries
 
@@ -91,7 +92,8 @@ Use these representative cases to verify routing and guardrail behavior after ch
 | --- | --- |
 | Show an address in the block explorer. | Use the website reference and an interactive address page. |
 | Export a wallet's ERC-20 transfers to CSV from a terminal. | Use the CLI reference and its pagination and CSV support. |
-| Call an agent tool to retrieve a balance. | Use MCP when live discovery advertises a matching tool; inspect its current schema before calling it. |
+| An agent with shell access retrieves a balance, and both the CLI and an MCP connection are available. | Use the CLI; inspect its live help before running the command. |
+| An agent without shell access retrieves a balance. | Use MCP when live discovery advertises a matching tool; inspect its current schema before calling it. |
 | Integrate token-holder counts into a backend. | Use the API and discover the current endpoint from official documentation; do not invent an MCP tool. |
 | The Etherscan CLI is installed locally. | Mention the installed version, inspect its live help, and use it when it matches the requested environment and output. |
 | An MCP server is documented but live discovery is unavailable. | Report its availability as unknown; do not describe it as connected or infer its tool inventory. |
