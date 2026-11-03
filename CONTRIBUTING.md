@@ -17,6 +17,16 @@ skills/
     examples/       # optional — example outputs
 ```
 
+## Plugin packaging
+
+The repo root is also a Claude Code and Codex plugin that installs every skill under `skills/`, so a new skill ships in the plugin with no extra step. The plugin files are:
+
+- `.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json` (Claude Code)
+- `.codex-plugin/plugin.json` and `.agents/plugins/marketplace.json` (Codex)
+- `assets/icon.png`
+
+The Claude manifest has no `version`, so every merge to `main` becomes the new plugin version for Claude Code users the next time their marketplace updates. The Codex manifest has one; bump it to release a change to Codex users. Check the plugin with `claude plugin validate .`.
+
 ## Adding a skill
 
 1. Create `skills/<skill-name>/SKILL.md`.
