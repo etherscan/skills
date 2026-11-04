@@ -1,0 +1,20 @@
+{
+  "name": "etherscan",
+  "interface": {
+    "displayName": "Etherscan"
+  },
+  "plugins": [
+    {
+      "name": "etherscan",
+      "source": {
+        "source": "local",
+        "path": "./"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_USE"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}

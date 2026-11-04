@@ -1,0 +1,14 @@
+{
+  "name": "etherscan",
+  "description": "Official Etherscan plugins",
+  "owner": {
+    "name": "Etherscan"
+  },
+  "plugins": [
+    {
+      "name": "etherscan",
+      "source": "./",
+      "description": "Debug EVM transactions, review verified contracts, and trace on-chain money flow with Etherscan."
+    }
+  ]
+}
